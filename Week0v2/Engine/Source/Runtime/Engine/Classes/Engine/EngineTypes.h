@@ -13,6 +13,8 @@ namespace EEndPlayReason
         Quit,
     };
 }
+
+// EWorldType은 이제 바뀌면 안됩니다!!!!!!!!!!!!!!!!!!!!!!!!!!
 namespace EWorldType
 {
     enum Type
@@ -32,10 +34,11 @@ namespace EWorldType
         /** A preview world for an editor tool */
         EditorPreview,
 
+        /** A particle preview world for a game */
+        EditorParticlePreview,
+
         /** A preview world for a game */
         GamePreview,
-
-        EditorParticlePreview,
 
         /** A minimal RPC world for a game */
         GameRPC,
@@ -44,3 +47,4 @@ namespace EWorldType
         Inactive
     };
 }
+// 주석을 지우시면 안됩니다. 
