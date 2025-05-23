@@ -82,7 +82,8 @@ void UTransformGizmo::Tick(const float DeltaTime)
 {
     if (GetWorld()->WorldType != EWorldType::Editor
       && GetWorld()->WorldType != EWorldType::EditorPreview
-      && GetWorld()->WorldType != EWorldType::EditorParticlePreview)
+      && GetWorld()->WorldType != EWorldType::EditorParticlePreview
+      )
      {
          return;
      }
