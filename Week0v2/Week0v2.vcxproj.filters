@@ -524,6 +524,10 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Particles\Size\ParticleModuleSize.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Particles\Velocity\ParticleModuleVelocity.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\ParticleMeshRenderPass.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Particles\Collision\ParticleModuleCollision.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Particles\Collision\ParticleModuleCollisionBase.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Particles\Snow\ParticleModuleSnow.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\ParticleMeshEmitterInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -798,6 +802,10 @@
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\ParticleMeshRenderPass.cpp" />
     <ClCompile Include="Shaders\ParticleMeshPixelShader.hlsl" />
     <ClCompile Include="Shaders\ParticleMeshVertexShader.hlsl" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Particles\Collision\ParticleModuleCollision.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Particles\Collision\ParticleModuleCollisionBase.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Particles\Snow\ParticleModuleSnow.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\ParticleMeshEmitterInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\ShaderHeaders\GConstantBuffers.hlsli" />
