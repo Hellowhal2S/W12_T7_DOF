@@ -1,23 +1,24 @@
 ﻿#pragma once
 
-#include <PxPhysicsAPI.h>
-#include <d3d11.h>
-#include <DirectXMath.h>
-#include <vector>
-
 #include "Math/Transform.h"
+
+#include <d3d11.h>
+#include <vector>
+#include <DirectXMath.h>
+#include <PxPhysicsAPI.h>
+
 
 struct FVector;
 using namespace physx;
 using namespace DirectX;
 
-PxDefaultAllocator      gAllocator;
-PxDefaultErrorCallback  gErrorCallback;
-PxFoundation*           gFoundation = nullptr;
-PxPhysics*              gPhysics = nullptr;
-PxScene*                gScene = nullptr;
-PxMaterial*             gMaterial = nullptr;
-PxDefaultCpuDispatcher* gDispatcher = nullptr;
+extern PxDefaultAllocator      gAllocator;
+extern PxDefaultErrorCallback  gErrorCallback;
+extern PxFoundation*           gFoundation;
+extern PxPhysics*              gPhysics;
+extern PxScene*                gScene;
+extern PxMaterial*             gMaterial;
+extern PxDefaultCpuDispatcher* gDispatcher;
 
 struct FGameObject {
     PxRigidDynamic* rigidBody = nullptr;
@@ -45,7 +46,7 @@ struct FGameObject {
  // PxJoint = FConstraintInstance
  // PxScene = UWorld->GetPhysicsScene()
 
-std::vector<FGameObject> gObjects;
+extern std::vector<FGameObject> gObjects;
 
 struct FPhysX
 {

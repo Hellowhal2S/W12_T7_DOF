@@ -62,7 +62,7 @@ public:
     virtual void NotifyEndOverlap(const UPrimitiveComponent* OtherComponent) const;
 
     bool MoveComponent(const FVector& Delta) override;
-    FVector ComponentVelocity
+    FVector ComponentVelocity;
 
 public:
     
