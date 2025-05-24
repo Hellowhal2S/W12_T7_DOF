@@ -7,6 +7,7 @@
 #include "ImGUI/imgui.h"
 #include "Engine/FBXLoader.h"
 #include "LevelEditor/SLevelEditor.h"
+#include "Physics/PhysX.h"
 #include "PropertyEditor/ViewportTypePanel.h"
 #include "Renderer/Renderer.h"
 #include "UnrealEd/ParticlePreviewUI.h"
@@ -45,7 +46,7 @@ int32 FEngineLoop::Init(const HINSTANCE hInstance)
     }
 
     GEngine->Init();
-
+    FPhysX::InitPhysX();
     for (const auto& AppWnd : AppWindows)
     {
         UpdateUI(AppWnd);

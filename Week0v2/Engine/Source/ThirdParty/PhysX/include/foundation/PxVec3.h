@@ -153,7 +153,8 @@ class PxVec3
 	/**
 	\brief returns true if all 3 elems of the vector are finite (not NAN or INF, etc.)
 	*/
-	PX_CUDA_CALLABLE PX_INLINE bool isFinite() const
+	PX_CUDA_CALLABLE PX_INLINE bool 
+() const
 	{
 		return PxIsFinite(x) && PxIsFinite(y) && PxIsFinite(z);
 	}

@@ -105,6 +105,12 @@ private:
 
     EAnimationMode AnimationMode;
     bool bPlayAnimation;
+
+    /** Array of FBodyInstance objects, storing per-instance state about about each body. */
+    TArray<struct FBodyInstance*> Bodies;
+
+    /** Array of FConstraintInstance structs, storing per-instance state about each constraint. */
+    TArray<struct FConstraintInstance*> Constraints;
 private:
     TArray<UStaticMeshComponent*> BoneComponents;
     bool bCPUSkinned = true;

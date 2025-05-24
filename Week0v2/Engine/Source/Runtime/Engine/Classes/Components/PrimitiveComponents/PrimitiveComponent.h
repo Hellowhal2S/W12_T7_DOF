@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/Source/Runtime/Engine/Classes/Components/SceneComponent.h"
+#include "PhysicsEngine/BodyInstance.h"
 #include "Serialization/Archive.h"
 
 struct HitResult;
@@ -61,7 +62,7 @@ public:
     virtual void NotifyEndOverlap(const UPrimitiveComponent* OtherComponent) const;
 
     bool MoveComponent(const FVector& Delta) override;
-    FVector ComponentVelocity;
+    FVector ComponentVelocity
 
 public:
     
@@ -72,7 +73,7 @@ public:
     FName GetVBIBTopologyMappingName() const { return VBIBTopologyMappingName; }
 protected:
     FName VBIBTopologyMappingName;
-
+    FBodyInstance BodyInstance;
 private:
     bool bGenerateOverlapEvents = true;
 };

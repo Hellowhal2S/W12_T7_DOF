@@ -4,6 +4,8 @@
 #include "Components/Material/Material.h"
 #include "Define.h"
 
+class UBodySetup;
+
 class UStaticMesh : public UObject
 {
     DECLARE_CLASS(UStaticMesh, UObject)
@@ -19,5 +21,6 @@ public:
     void SetData(OBJ::FStaticMeshRenderData* renderData);
 private:
     OBJ::FStaticMeshRenderData* staticMeshRenderData = nullptr;
+    UBodySetup* BodySetup;
     TArray<FMaterialSlot*> materials;
 };

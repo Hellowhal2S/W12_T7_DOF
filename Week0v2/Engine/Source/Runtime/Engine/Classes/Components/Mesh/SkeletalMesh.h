@@ -3,6 +3,7 @@
 #include "UObject/Object.h"
 #include "UObject/ObjectMacros.h"
 
+class UPhysicsAsset;
 class USkeleton;
 
 class USkeletalMesh : public UObject
@@ -41,7 +42,8 @@ private:
     FSkeletalMeshRenderData SkeletalMeshRenderData;
     USkeleton* Skeleton;
     TArray<FMaterialSlot*> MaterialSlots;
-
+    UPhysicsAsset* PhysicsAsset;
+    
     void UpdateChildBones(int ParentIndex);
     void ApplyRotationToBone(int BoneIndex, float DeltaAngleInDegrees, const FVector& RotationAxis);
 };
