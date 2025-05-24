@@ -5,12 +5,17 @@
 #include "PropertyEditor/OutlinerEditorPanel.h"
 #include "PropertyEditor/PreviewControlEditorPanel.h"
 #include "PropertyEditor/PrimitiveDrawEditor.h"
-#include "PropertyEditor/SkeletalPreviewPropertyEditorPanel.h"
+#include "PropertyEditor/SkeletonPanel.h"
+#include "ViewerPanel/ViewerControlPanel.h"
+#include "ViewerPanel/ViewerMenuPanel.h"
 
 void FPhysicsPreviewUI::Initialize(SLevelEditor* LevelEditor, float Width, float Height)
 {
-    auto ControlPanel = std::make_shared<PreviewControlEditorPanel>();
-    ControlPanel->Initialize(LevelEditor, Width, Height);
+    auto MenuPanel = std::make_shared<ViewerMenuPanel>();
+    Panels["MenuPanel"] = MenuPanel;
+    
+    auto ControlPanel = std::make_shared<ViewerControlPanel>();
+    // ControlPanel->Initialize(LevelEditor, Width, Height);
     Panels["PreviewControlPanel"] = ControlPanel;
     
     auto OutlinerPanel = std::make_shared<OutlinerEditorPanel>();
@@ -18,7 +23,7 @@ void FPhysicsPreviewUI::Initialize(SLevelEditor* LevelEditor, float Width, float
     Panels["OutlinerPanel"] = OutlinerPanel;
     Panels["OutlinerPanel"]->bIsVisible = false;
     
-    auto PropertyPanel = std::make_shared<SkeletalPreviewPropertyEditorPanel>();
+    auto PropertyPanel = std::make_shared<FSkeletonPanel>();
     PropertyPanel->Initialize(Width, Height);   
     Panels["PropertyPanel"] = PropertyPanel;
     

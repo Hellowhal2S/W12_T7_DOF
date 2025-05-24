@@ -21,7 +21,7 @@ class UStaticMeshComponent;
 class USceneComponent;
 class ULevel;
 
-class SkeletalPreviewPropertyEditorPanel : public UEditorPanel
+class FSkeletonPanel : public UEditorPanel
 {
 public:
     void Initialize(float InWidth, float InHeight);

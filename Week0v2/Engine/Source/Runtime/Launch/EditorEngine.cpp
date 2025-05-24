@@ -336,9 +336,8 @@ UWorld* UEditorEngine::CreatePreviewWindow(const FString& Name, EWorldType::Type
     if (WorldType == EWorldType::Type::EditorParticlePreview)
     {
         EditorViewportClient->ViewportWorldType = VT_Particle;
-        // FRect newSize = FRect(0.0f,70.0f,420.0f,420.0f);
-        // EditorViewportClient->ResizeViewport(newSize);
     }
+    
     return NewPreviewWorld;
 }
 

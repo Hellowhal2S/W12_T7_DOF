@@ -1,4 +1,4 @@
-#include "SkeletalPreviewPropertyEditorPanel.h"
+#include "SkeletonPanel.h"
 
 #include <shellapi.h> // ShellExecute 관련 함수 정의 포함
 
@@ -36,13 +36,13 @@
 #include "UnrealEd/EditorViewportClient.h"
 #include "UObject/FunctionRegistry.h"
 
-void SkeletalPreviewPropertyEditorPanel::Initialize(float InWidth, float InHeight)
+void FSkeletonPanel::Initialize(float InWidth, float InHeight)
 {
     Width = InWidth;
     Height = InHeight;
 }
 
-void SkeletalPreviewPropertyEditorPanel::Render()
+void FSkeletonPanel::Render()
 {
     UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
     if (EditorEngine == nullptr)
@@ -66,7 +66,7 @@ void SkeletalPreviewPropertyEditorPanel::Render()
     float PanelHeight = (Height) * 0.65f;
 
     float PanelPosX = (Width) * 0.8f + 5.0f;
-    float PanelPosY = (Height) * 0.3f + 15.0f;
+    float PanelPosY = 70.0f;
 
     ImVec2 MinSize(140, 370);
     ImVec2 MaxSize(FLT_MAX, 900);
@@ -84,7 +84,7 @@ void SkeletalPreviewPropertyEditorPanel::Render()
     ImGuiWindowFlags PanelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
 
     /* Render Start */
-    ImGui::Begin("Detail", nullptr, PanelFlags);
+    ImGui::Begin("Skeleton", nullptr, PanelFlags);
 
     // 프리뷰 월드에서는 오로지 하나의 액터만 선택 가능 (스켈레탈 메쉬 프리뷰인 경우, 스켈레탈 메쉬 액터)
     AActor* PickedActor = nullptr;
@@ -129,7 +129,7 @@ void SkeletalPreviewPropertyEditorPanel::Render()
     ImGui::End();
 }
 
-void SkeletalPreviewPropertyEditorPanel::DrawSceneComponentTree(USceneComponent* Component, UActorComponent*& PickedComponent)
+void FSkeletonPanel::DrawSceneComponentTree(USceneComponent* Component, UActorComponent*& PickedComponent)
 {
     if (!Component) return;
 
@@ -160,7 +160,7 @@ void SkeletalPreviewPropertyEditorPanel::DrawSceneComponentTree(USceneComponent*
     }
 }
 
-void SkeletalPreviewPropertyEditorPanel::DrawActorComponent(UActorComponent* Component, UActorComponent*& PickedComponent)
+void FSkeletonPanel::DrawActorComponent(UActorComponent* Component, UActorComponent*& PickedComponent)
 {
     if (!Component) return;
 
@@ -177,7 +177,7 @@ void SkeletalPreviewPropertyEditorPanel::DrawActorComponent(UActorComponent* Com
     }
 }
 
-void SkeletalPreviewPropertyEditorPanel::RGBToHSV(float r, float g, float b, float& h, float& s, float& v) const
+void FSkeletonPanel::RGBToHSV(float r, float g, float b, float& h, float& s, float& v) const
 {
     float mx = FMath::Max(r, FMath::Max(g, b));
     float mn = FMath::Min(r, FMath::Min(g, b));
@@ -214,7 +214,7 @@ void SkeletalPreviewPropertyEditorPanel::RGBToHSV(float r, float g, float b, flo
     }
 }
 
-void SkeletalPreviewPropertyEditorPanel::HSVToRGB(float h, float s, float v, float& r, float& g, float& b) const
+void FSkeletonPanel::HSVToRGB(float h, float s, float v, float& r, float& g, float& b) const
 {
     // h: 0~360, s:0~1, v:0~1
     float c = v * s;
@@ -232,7 +232,7 @@ void SkeletalPreviewPropertyEditorPanel::HSVToRGB(float h, float s, float v, flo
     r += m;  g += m;  b += m;
 }
 
-void SkeletalPreviewPropertyEditorPanel::RenderForSkeletalMesh(USkeletalMeshComponent* SkeletalMeshComp)
+void FSkeletonPanel::RenderForSkeletalMesh(USkeletalMeshComponent* SkeletalMeshComp)
 {
     if (SkeletalMeshComp->GetSkeletalMesh() == nullptr)
     {
@@ -296,7 +296,7 @@ void SkeletalPreviewPropertyEditorPanel::RenderForSkeletalMesh(USkeletalMeshComp
     }
     ImGui::PopStyleColor();
 }
-void SkeletalPreviewPropertyEditorPanel::RenderForSkeletalMesh2(USkeletalMeshComponent* SkeletalMesh)
+void FSkeletonPanel::RenderForSkeletalMesh2(USkeletalMeshComponent* SkeletalMesh)
 {
     if (SkeletalMesh->GetSkeletalMesh() == nullptr)
     {
@@ -414,7 +414,7 @@ void SkeletalPreviewPropertyEditorPanel::RenderForSkeletalMesh2(USkeletalMeshCom
     ImGui::PopStyleColor();
 }
 
-void SkeletalPreviewPropertyEditorPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int32 BoneIndex)
+void FSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int32 BoneIndex)
 {
     // 범위 체크
     if (BoneIndex < 0 || BoneIndex >= SkeletalMesh->GetRenderData().Bones.Num())
@@ -424,7 +424,7 @@ void SkeletalPreviewPropertyEditorPanel::RenderBoneHierarchy(USkeletalMesh* Skel
     const FString& boneName = SkeletalMesh->GetRenderData().Bones[BoneIndex].BoneName;
 
     // 트리 노드 플래그 설정
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick| ImGuiTreeNodeFlags_DefaultOpen;
 
     // 현재 선택된 본인지 확인
     bool isSelected = (SelectedBoneIndex == BoneIndex);
@@ -493,12 +493,12 @@ void SkeletalPreviewPropertyEditorPanel::RenderBoneHierarchy(USkeletalMesh* Skel
 }
 
 // 뼈가 선택되었을 때 호출되는 함수
-void SkeletalPreviewPropertyEditorPanel::OnBoneSelected(int BoneIndex)
+void FSkeletonPanel::OnBoneSelected(int BoneIndex)
 {
     SelectedBoneIndex = BoneIndex;
 }
 
-void SkeletalPreviewPropertyEditorPanel::RenderShapeProperty(AActor* PickedActor)
+void FSkeletonPanel::RenderShapeProperty(AActor* PickedActor)
 {
     if (PickedActor && PickedComponent && PickedComponent->IsA<UBoxShapeComponent>())
     {
@@ -559,7 +559,7 @@ void SkeletalPreviewPropertyEditorPanel::RenderShapeProperty(AActor* PickedActor
     }
 }
 
-void SkeletalPreviewPropertyEditorPanel::RenderDelegate(ULevel* level)
+void FSkeletonPanel::RenderDelegate(ULevel* level)
 {
     static AActor* SelectedActor = nullptr;
     FString SelectedActorName;
@@ -594,7 +594,7 @@ void SkeletalPreviewPropertyEditorPanel::RenderDelegate(ULevel* level)
     }
 }
 
-void SkeletalPreviewPropertyEditorPanel::OnResize(HWND hWnd)
+void FSkeletonPanel::OnResize(HWND hWnd)
 {
     RECT clientRect;
     GetClientRect(hWnd, &clientRect);

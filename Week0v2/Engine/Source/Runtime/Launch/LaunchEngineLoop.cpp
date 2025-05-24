@@ -272,7 +272,10 @@ void FEngineLoop::UpdateUI(HWND AppWnd) const
         {
             ParticlePreviewUI->OnResize(AppWnd);
         }
-
+        if (const FPhysicsPreviewUI* PhysicsPreviewUI = EditorEngine->GetPhysicsPreviewUI())
+        {
+            PhysicsPreviewUI->OnResize(AppWnd);
+        }
         if (EditorEngine->ContentsUI)
         {
             EditorEngine->ContentsUI->OnResize(AppWnd);

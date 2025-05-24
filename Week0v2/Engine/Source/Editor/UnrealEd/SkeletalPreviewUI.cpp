@@ -5,7 +5,7 @@
 #include "PropertyEditor/OutlinerEditorPanel.h"
 #include "PropertyEditor/PreviewControlEditorPanel.h"
 #include "PropertyEditor/PrimitiveDrawEditor.h"
-#include "PropertyEditor/SkeletalPreviewPropertyEditorPanel.h"
+#include "PropertyEditor/SkeletonPanel.h"
 
 void FSkeletalPreviewUI::Initialize(SLevelEditor* LevelEditor, float Width, float Height)
 {
@@ -18,7 +18,7 @@ void FSkeletalPreviewUI::Initialize(SLevelEditor* LevelEditor, float Width, floa
     Panels["OutlinerPanel"] = OutlinerPanel;
     Panels["OutlinerPanel"]->bIsVisible = false;
     
-    auto PropertyPanel = std::make_shared<SkeletalPreviewPropertyEditorPanel>();
+    auto PropertyPanel = std::make_shared<FSkeletonPanel>();
     PropertyPanel->Initialize(Width, Height);   
     Panels["PropertyPanel"] = PropertyPanel;
     
