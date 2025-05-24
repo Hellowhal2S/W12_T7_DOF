@@ -2,7 +2,9 @@
 
 // #include "Engine/FbxLoader.h"
 #include "LaunchEngineLoop.h"
+#include "Actors/SkeletalMeshActor.h"
 #include "Components/Mesh/SkeletalMesh.h"
+#include "Components/PrimitiveComponents/MeshComponents/SkeletalMeshComponent.h"
 #include "Engine/FEditorStateManager.h"
 #include "ImGui/imgui_internal.h"
 #include "UObject/UObjectIterator.h"
@@ -75,8 +77,15 @@ void FDrawer::RenderContentDrawer()
         
         if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
         {
-            Cast<UEditorEngine>(GEngine)->CreatePreviewWindow("PhysicsViewer", EWorldType::PhysicsPreview);
-            
+            UWorld* World =  Cast<UEditorEngine>(GEngine)->CreatePreviewWindow("PhysicsViewer", EWorldType::EditorPhysicsPreview);
+
+            // SkeletalMeshActor 생성
+            ASkeletalMeshActor* SkeletalMeshActor = World->SpawnActor<ASkeletalMeshActor>();
+            SkeletalMeshActor->SetActorLabel("PreviewSkeletalMeshActor");
+
+            // Mesh 및 Animation 설정
+            USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(SkeletalMeshActor->GetRootComponent());
+            SkeletalMeshComponent->SetSkeletalMesh(FFBXLoader::CreateSkeletalMesh(Obj->GetRenderData().Name));
             break;
         }
     }

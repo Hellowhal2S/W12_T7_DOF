@@ -11,6 +11,7 @@
 #include "PropertyEditor/ViewportTypePanel.h"
 #include "Renderer/Renderer.h"
 #include "UnrealEd/ParticlePreviewUI.h"
+#include "UnrealEd/PhysicsPreviewUI.h"
 #include "UnrealEd/SkeletalPreviewUI.h"
 #include "UnrealEd/UnrealEd.h"
 #include "UObject/Casts.h"
@@ -153,6 +154,8 @@ void FEngineLoop::Render() const
             UWorld* TargetWorld = ViewportClients[0]->GetWorld();
             EditorEngine->GetUnrealEditor()->SetWorld(TargetWorld);
             EditorEngine->GetSkeletalPreviewUI()->SetWorld(TargetWorld);
+            EditorEngine->GetPhysicsPreviewUI()->SetWorld(TargetWorld);
+            EditorEngine->GetParticlePreviewUI()->SetWorld(TargetWorld);
             EditorEngine->ContentsUI->SetWorld(TargetWorld);
             if (TargetWorld->WorldType == EWorldType::Editor)
             {
@@ -184,6 +187,10 @@ void FEngineLoop::Render() const
             else if (TargetWorld->WorldType == EWorldType::EditorParticlePreview)
             {
                 EditorEngine->GetParticlePreviewUI()->Render();
+            }
+            else if (TargetWorld->WorldType == EWorldType::EditorPhysicsPreview)
+            {
+                EditorEngine->GetPhysicsPreviewUI()->Render();
             }
         }
         ImGuiManager::Get().EndFrame(AppWindow);

@@ -2,6 +2,7 @@
 #include "Engine/Engine.h"
 #include "Coroutine/CoroutineManager.h"
 
+class FPhysicsPreviewUI;
 class FParticlePreviewUI;
 class FSkeletalPreviewUI;
 class FCollisionManager;
@@ -54,6 +55,7 @@ public:
     UnrealEd* GetUnrealEditor() const { return UnrealEditor; }
     FSkeletalPreviewUI* GetSkeletalPreviewUI() const { return SkeletalPreviewUI; }    
     FParticlePreviewUI* GetParticlePreviewUI() const { return ParticlePreviewUI; }
+    FPhysicsPreviewUI* GetPhysicsPreviewUI() const { return PhysicsPreviewUI; }
 
     float testBlurStrength;
 
@@ -72,9 +74,9 @@ private:
     UnrealEd* UnrealEditor = nullptr;
     FSkeletalPreviewUI* SkeletalPreviewUI = nullptr;
     FParticlePreviewUI* ParticlePreviewUI = nullptr;
+    FPhysicsPreviewUI* PhysicsPreviewUI = nullptr;
     SLevelEditor* LevelEditor = nullptr;
     UEditorPlayer* EditorPlayer = nullptr;
 
 public:
-    FParticlePreviewUI* GetParticlePreviewUI() { return ParticlePreviewUI; }
 };

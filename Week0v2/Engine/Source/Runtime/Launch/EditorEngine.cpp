@@ -23,6 +23,7 @@
 #include "GameFramework/PlayerController.h"
 #include "SlateCore/Layout/SlateRect.h"
 #include "UnrealEd/ParticlePreviewUI.h"
+#include "UnrealEd/PhysicsPreviewUI.h"
 #include "UnrealEd/SkeletalPreviewUI.h"
 #include "UserInterface/Drawer.h"
 
@@ -40,6 +41,7 @@ void UEditorEngine::Init()
     ContentsUI = new FContentsUI();
     SkeletalPreviewUI = new FSkeletalPreviewUI();
     ParticlePreviewUI = new FParticlePreviewUI();
+    PhysicsPreviewUI = new FPhysicsPreviewUI();
     
     UWorld* EditorWorld = CreateWorld(EWorldType::Editor, LEVELTICK_ViewportsOnly);
     EditorWorldContext = CreateNewWorldContext(EditorWorld, EWorldType::Editor, LEVELTICK_ViewportsOnly);
@@ -50,7 +52,8 @@ void UEditorEngine::Init()
     UnrealEditor->Initialize(LevelEditor, GEngineLoop.GraphicDevice.GetDefaultWindowData().ScreenWidth, GEngineLoop.GraphicDevice.GetDefaultWindowData().ScreenHeight);
     SkeletalPreviewUI->Initialize(LevelEditor, GEngineLoop.GraphicDevice.GetDefaultWindowData().ScreenWidth, GEngineLoop.GraphicDevice.GetDefaultWindowData().ScreenHeight);
     ParticlePreviewUI->Initialize(LevelEditor, GEngineLoop.GraphicDevice.GetDefaultWindowData().ScreenWidth, GEngineLoop.GraphicDevice.GetDefaultWindowData().ScreenHeight);
-
+    PhysicsPreviewUI->Initialize(LevelEditor, GEngineLoop.GraphicDevice.GetDefaultWindowData().ScreenWidth, GEngineLoop.GraphicDevice.GetDefaultWindowData().ScreenHeight);
+    
     ContentsUI->Initialize();
     CollisionManager.Initialize();  
     FLuaManager::Get().Initialize();    

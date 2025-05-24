@@ -39,14 +39,7 @@ private:
     void RenderForSkeletalMesh2(USkeletalMeshComponent* SkeletalMesh);
     void RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int BoneIndex);
     void OnBoneSelected(int BoneIndex);
-
-    /* Materials Settings */
-    void RenderForMaterial(UStaticMeshComponent* StaticMeshComp);
-    void RenderForMaterial(USkeletalMeshComponent* SkeletalMeshComp);
-    void RenderMaterialView(UMaterial* Material, bool IsStaticMesh);
-    void RenderCreateMaterialView();
-
-    void RenderForLua(class ULuaComponent* LuaComponent);
+    
     void RenderShapeProperty(AActor* PickedActor);
     void RenderDelegate(ULevel* level);
     

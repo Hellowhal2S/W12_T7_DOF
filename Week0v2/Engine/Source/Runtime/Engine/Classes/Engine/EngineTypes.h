@@ -14,7 +14,7 @@ namespace EEndPlayReason
     };
 }
 
-// EWorldType은 이제 바뀌면 안됩니다!!!!!!!!!!!!!!!!!!!!!!!!!!
+// EWorldType은 이제 바뀌면 안됩니다!!!!!!!!!!!!!!!!!!!!!!!!!! -> 하나만 더 추가할게
 namespace EWorldType
 {
     enum Type
@@ -38,7 +38,7 @@ namespace EWorldType
         EditorParticlePreview,
         
         /** A Physics preview world for a game */
-        PhysicsPreview,
+        EditorPhysicsPreview,
 
         /** A preview world for a game */
         GamePreview,

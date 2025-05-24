@@ -61,7 +61,7 @@ void FEditorViewportClient::Initialize(const HWND InOwnerWindow, const uint32 In
 
 void FEditorViewportClient::Tick(const float DeltaTime)
 {
-    if (GetWorld()->WorldType == EWorldType::Editor || GetWorld()->WorldType == EWorldType::EditorPreview || GetWorld()->WorldType == EWorldType::EditorPreview)
+    if (GetWorld()->WorldType == EWorldType::Editor || GetWorld()->WorldType == EWorldType::EditorPreview || GetWorld()->WorldType == EWorldType::EditorPhysicsPreview)
     {
         UpdateEditorCameraMovement(DeltaTime);
     }

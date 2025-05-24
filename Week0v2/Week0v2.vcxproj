@@ -195,6 +195,7 @@ xcopy /y /d "$(ProjectDir)Engine\Source\ThirdParty\FBX_SDK\2020.3.7\lib\x64\$(Co
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\AnimSequenceEditorPanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\EditorPanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\ParticlePreviewUI.cpp" />
+    <ClCompile Include="Engine\Source\Editor\UnrealEd\PhysicsPreviewUI.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\ParticleCurvePanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\ParticleDetailPanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\ViewerControlPanel.cpp" />
@@ -479,6 +480,7 @@ xcopy /y /d "$(ProjectDir)Engine\Source\ThirdParty\FBX_SDK\2020.3.7\lib\x64\$(Co
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\Editor\UnrealEd\ParticlePreviewUI.h" />
+    <ClInclude Include="Engine\Source\Editor\UnrealEd\PhysicsPreviewUI.h" />
     <ClInclude Include="Engine\Source\Editor\UnrealEd\ViewerPanel\ParticleCurvePanel.h" />
     <ClInclude Include="Engine\Source\Editor\UnrealEd\ViewerPanel\ParticleDetailPanel.h" />
     <ClInclude Include="Engine\Source\Editor\UnrealEd\ViewerPanel\ViewerControlPanel.h" />
