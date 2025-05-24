@@ -3,6 +3,7 @@
 #pragma once
 #include "Define.h"
 #include "UnrealEd/EditorPanel.h"
+#include "UnrealEd/ViewerPanel/SkeletonDetailPanel.h"
 
 struct FBoneRotation
 {
@@ -69,4 +70,5 @@ private:
     TMap<int, FBoneRotation> BoneRotations;
     TMap<int, FBoneRotation> PrevBoneRotations;
 
+    FSkeletonDetailPanel PhysicsDetailPanel;
 };

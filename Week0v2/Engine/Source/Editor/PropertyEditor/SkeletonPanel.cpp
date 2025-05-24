@@ -80,6 +80,7 @@ void FSkeletonPanel::Render()
     /* Panel Size */
     ImGui::SetNextWindowSize(ImVec2(PanelWidth, PanelHeight), ImGuiCond_Always);
 
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 255)); 
     /* Panel Flags */
     ImGuiWindowFlags PanelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
 
@@ -127,6 +128,8 @@ void FSkeletonPanel::Render()
     RenderShapeProperty(PickedActor);
 
     ImGui::End();
+    PhysicsDetailPanel.Render();
+    ImGui::PopStyleColor();
 }
 
 void FSkeletonPanel::DrawSceneComponentTree(USceneComponent* Component, UActorComponent*& PickedComponent)
@@ -600,4 +603,5 @@ void FSkeletonPanel::OnResize(HWND hWnd)
     GetClientRect(hWnd, &clientRect);
     Width = clientRect.right - clientRect.left;
     Height = clientRect.bottom - clientRect.top;
+    PhysicsDetailPanel.OnResize(hWnd);
 }
