@@ -47,6 +47,8 @@ public:
     void ForceEditorUIOnOff() { bForceEditorUI = !bForceEditorUI; }
     
     bool bForceEditorUI = false;
+    bool bLCtrlDown = false;
+    bool bSpaceDown = false;
 public:
     SLevelEditor* GetLevelEditor() const { return LevelEditor; }
     UnrealEd* GetUnrealEditor() const { return UnrealEditor; }

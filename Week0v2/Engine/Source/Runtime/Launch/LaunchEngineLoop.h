@@ -37,6 +37,7 @@ public:
     static FResourceManager ResourceManager;
     
 
+    float GDeltaTime = 0.0f;
 private:
     TArray<HWND> AppWindows;
     HWND DefaultWindow;

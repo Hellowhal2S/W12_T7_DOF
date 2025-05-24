@@ -1,10 +1,12 @@
 ﻿#include "UnrealEd.h"
 #include "EditorPanel.h"
+#include "LaunchEngineLoop.h"
 
 #include "PropertyEditor/ControlEditorPanel.h"
 #include "PropertyEditor/OutlinerEditorPanel.h"
 #include "PropertyEditor/PrimitiveDrawEditor.h"
 #include "PropertyEditor/PropertyEditorPanel.h"
+#include "UserInterface/Drawer.h"
 
 void UnrealEd::Initialize(SLevelEditor* LevelEditor, float Width, float Height)
 {
@@ -22,6 +24,9 @@ void UnrealEd::Initialize(SLevelEditor* LevelEditor, float Width, float Height)
     
     auto PrimitiveDrawer = std::make_shared<PrimitiveDrawEditor>();
     Panels["PrimitiveDrawEditor"] = PrimitiveDrawer;
+
+    auto Drawer = std::make_shared<FDrawer>();
+    Panels["Drawer"] = Drawer;
 }
 
 void UnrealEd::Render() const
@@ -29,6 +34,10 @@ void UnrealEd::Render() const
     for (const auto& Panel : Panels)
     {
         Panel.Value->Render();
+        if (Panel.Key == "Drawer")
+        {
+            static_cast<FDrawer*>(Panel.Value.get())->Render(GEngineLoop.GDeltaTime);
+        }
     }
 }
 

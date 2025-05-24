@@ -36,6 +36,9 @@ namespace EWorldType
 
         /** A particle preview world for a game */
         EditorParticlePreview,
+        
+        /** A Physics preview world for a game */
+        PhysicsPreview,
 
         /** A preview world for a game */
         GamePreview,

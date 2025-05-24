@@ -24,6 +24,7 @@
 #include "SlateCore/Layout/SlateRect.h"
 #include "UnrealEd/ParticlePreviewUI.h"
 #include "UnrealEd/SkeletalPreviewUI.h"
+#include "UserInterface/Drawer.h"
 
 class ULevel;
 
@@ -143,6 +144,28 @@ void UEditorEngine::Input()
         {
             bUButtonDown = false;
         }
+    }
+    if (GetAsyncKeyState(VK_LCONTROL) & 0x8000)
+    {
+        if (!bLCtrlDown)
+            bLCtrlDown = true;
+    }
+    else
+    {
+        bLCtrlDown =false;
+    }
+    if (GetAsyncKeyState(VK_SPACE) & 0x8000)
+    {
+        if (!bSpaceDown)
+        {
+            bSpaceDown = true;;
+            if (bLCtrlDown)
+                static_cast<FDrawer*>(UnrealEditor->GetEditorPanel("Drawer").get())->Toggle();
+        }
+    }
+    else
+    {
+        bSpaceDown = false;
     }
 }
 
