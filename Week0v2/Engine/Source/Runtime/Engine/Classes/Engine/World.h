@@ -1,4 +1,6 @@
 #pragma once
+#include <PxScene.h>
+
 #include "Define.h"
 #include "EngineBaseTypes.h"
 #include "EngineTypes.h"
@@ -17,6 +19,8 @@ class UCameraComponent;
 class USceneComponent;
 class UTransformGizmo;
 class USkeletalMesh;
+
+using namespace physx;
 
 class UWorld final : public UObject
 {
@@ -113,6 +117,13 @@ public:
     USceneComponent* GetPickingGizmo() const { return pickingGizmo; }
     void SetPickingGizmo(UObject* Object);
 
+public:
+    /** Returns a pointer to the physics scene for this world. */
+    PxScene* GetPhysicsScene() const { return PhysicsScene; }
+
+private:
+    PxScene* PhysicsScene;
+    
 public:
     // serialize
     void Serialize(FArchive& ar) const;
