@@ -131,4 +131,14 @@ public:
 
 public:
     EComponentOrigin ComponentOrigin = EComponentOrigin::None;
+
+public:
+    /** If the physics state is currently created for this component */
+    uint8 bPhysicsStateCreated:1;
+
+    
+    
+public:
+    /** Create any physics engine information for this component */
+    void CreatePhysicsState(bool bAllowDeferral = false);
 };
