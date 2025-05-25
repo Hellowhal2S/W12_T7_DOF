@@ -1,6 +1,5 @@
 #pragma once
 
-#pragma once
 #include "Define.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "UnrealEd/EditorPanel.h"

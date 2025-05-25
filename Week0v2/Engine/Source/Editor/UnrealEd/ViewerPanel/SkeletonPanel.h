@@ -1,6 +1,5 @@
 #pragma once
 
-#pragma once
 #include "Define.h"
 #include "UnrealEd/EditorPanel.h"
 #include "UnrealEd/ViewerPanel/SkeletonDetailPanel.h"
