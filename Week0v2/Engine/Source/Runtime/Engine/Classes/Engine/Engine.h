@@ -6,14 +6,6 @@
 #include "UObject/ObjectMacros.h"
 
 
-namespace physx
-{
-    class PxFoundation;
-    class PxPvd;
-    class PxPvdTransport;
-    class PxPhysics;
-}
-
 class UAssetManager;
 
 struct FWorldContext

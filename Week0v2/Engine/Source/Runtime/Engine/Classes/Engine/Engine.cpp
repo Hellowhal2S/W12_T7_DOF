@@ -1,5 +1,5 @@
 #include "Engine.h"
-#include "ThirdParty/PhysX/include/PxPhysicsAPI.h"
+
 void UEngine::Init()
 {
 }
