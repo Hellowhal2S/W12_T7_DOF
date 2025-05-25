@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Math/Transform.h"
 
@@ -75,7 +75,7 @@ struct FPhysX
 
 
         PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
-        sceneDesc.gravity = PxVec3(0, -9.81f, 0);
+        sceneDesc.gravity = PxVec3(0, 0, -9.81f);
         gDispatcher = PxDefaultCpuDispatcherCreate(2);
         sceneDesc.cpuDispatcher = gDispatcher;
         sceneDesc.filterShader = PxDefaultSimulationFilterShader;
@@ -91,10 +91,10 @@ struct FPhysX
 
         PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();
         
-        PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 1, 0, 0), *gMaterial);
+        PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 0, 1, 0), *gMaterial);
         gScene->addActor(*GroundPlane);
         
-        PxTransform BoxTransform(PxVec3(0.0f, 100.0f, 0.0f)); 
+        PxTransform BoxTransform(PxVec3(0.0f, 0.0f, 100.0f)); 
         PxBoxGeometry BoxGeometry(PxVec3(1.0f, 1.0f, 1.0f)); 
 
         PxRigidDynamic* BoxActor = PxCreateDynamic(*gPhysics, BoxTransform, BoxGeometry, *gMaterial, 10.0f);
