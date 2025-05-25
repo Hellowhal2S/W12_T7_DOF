@@ -8,6 +8,7 @@
 #include <PxPhysicsAPI.h>
 #include "PhysXCallback.h"
 
+#define SCOPED_READ_LOCK(scene) physx::PxSceneReadLock readLock(scene);
 
 struct FVector;
 using namespace physx;
@@ -27,6 +28,7 @@ struct FGameObject {
     XMMATRIX worldMatrix = XMMatrixIdentity();
 
     void UpdateFromPhysics() {
+        SCOPED_READ_LOCK(*gScene);
         PxTransform t = rigidBody->getGlobalPose();
         PxMat44 mat(t);
         worldMatrix = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(&mat));
@@ -79,8 +81,11 @@ struct FPhysX
 
         PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
         sceneDesc.gravity = PxVec3(0, -9.81f, 0);
-        gDispatcher = PxDefaultCpuDispatcherCreate(2);
+        gDispatcher = PxDefaultCpuDispatcherCreate(4);
         sceneDesc.cpuDispatcher = gDispatcher;
+        sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+        sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+        sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;;
         sceneDesc.filterShader = MyFilterShader;
         gMyCallback = new MySimulationEventCallback();
         sceneDesc.simulationEventCallback = gMyCallback;
