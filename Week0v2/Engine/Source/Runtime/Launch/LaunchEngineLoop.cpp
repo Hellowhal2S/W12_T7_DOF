@@ -82,9 +82,9 @@ void FEngineLoop::Tick()
                 break;
             }
         }
-        const float DeltaTime = static_cast<float>(ElapsedTime / 1000.f);
+        GDeltaTime = static_cast<float>(ElapsedTime / 1000.f);
         
-        GEngine->Tick(DeltaTime);
+        GEngine->Tick(GDeltaTime);
         
         Render();
 
