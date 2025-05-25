@@ -39,7 +39,11 @@ private:
     
     void RenderShapeProperty(AActor* PickedActor);
 
+    bool CheckAndCreateBodySetup(const FName& BoneName, UBodySetup*& FoundSetup);
     void AddSphereToBone(const FName& BoneName);
+    void AddBoxToBone(const FName& BoneName);
+    void AddCapsuleToBone(const FName& BoneName);
+    void AddConvexToBone(const FName& BoneName);
 private:
     float Width = 0, Height = 0;
     

@@ -282,10 +282,12 @@ void FPhysicsSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int
     {
         if (ImGui::MenuItem("Add Sphere Collision"))
             AddSphereToBone(boneName);
-        // if (ImGui::MenuItem("Add Box Collision"))
-        //     AddBoxToBone(boneName);
-        // if (ImGui::MenuItem("Add Capsule Collision"))
-        //     AddCapsuleToBone(boneName);
+        if (ImGui::MenuItem("Add Box Collision"))
+             AddBoxToBone(boneName);
+        if (ImGui::MenuItem("Add Capsule Collision"))
+             AddCapsuleToBone(boneName);
+        if (ImGui::MenuItem("Add Convex Collision"))
+            AddConvexToBone(boneName);
         ImGui::EndPopup();
     }
 
@@ -333,12 +335,11 @@ void FPhysicsSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int
         ImGui::TreePop();
     }
 }
-void FPhysicsSkeletonPanel::AddSphereToBone(const FName& BoneName)
+bool FPhysicsSkeletonPanel::CheckAndCreateBodySetup(const FName& BoneName, UBodySetup*& FoundSetup)
 {
-    if (!PhysicsAsset) return;
+    if (!PhysicsAsset) return false;
 
-    // 1) 기존 BodySetup 찾기
-    UBodySetup* FoundSetup = nullptr;
+    FoundSetup = nullptr;
     for (UBodySetup* Setup : PhysicsAsset->BodySetup)
     {
         if (Setup && Setup->BoneName == BoneName)
@@ -347,6 +348,19 @@ void FPhysicsSkeletonPanel::AddSphereToBone(const FName& BoneName)
             break;
         }
     }
+    if (!FoundSetup)
+    {
+        FoundSetup = FObjectFactory::ConstructObject<UBodySetup>(PhysicsAsset);
+        FoundSetup->BoneName = BoneName;
+        PhysicsAsset->BodySetup.Add(FoundSetup);
+    }
+    return true;
+}
+
+void FPhysicsSkeletonPanel::AddSphereToBone(const FName& BoneName)
+{
+    UBodySetup* FoundSetup;
+    if (!CheckAndCreateBodySetup(BoneName, FoundSetup)) return;
 
     // 2) 없으면 새로 생성
     if (!FoundSetup)
@@ -367,6 +381,62 @@ void FPhysicsSkeletonPanel::AddSphereToBone(const FName& BoneName)
 
     // 4) UI 동기화(필요 시)
     // bNeedsRefresh = true;
+}
+void FPhysicsSkeletonPanel::AddBoxToBone(const FName& BoneName)
+{
+    UBodySetup* FoundSetup;
+    if (!CheckAndCreateBodySetup(BoneName, FoundSetup)) return;
+
+    // 2) 없으면 새로 생성
+    if (!FoundSetup)
+    {
+        FoundSetup = FObjectFactory::ConstructObject<UBodySetup>(PhysicsAsset);
+        FoundSetup->BoneName = BoneName;
+        PhysicsAsset->BodySetup.Add(FoundSetup);
+    }
+
+    // 3) AggGeom에 BoxElem 추가
+    FKBoxElem NewBox;
+    NewBox.X = 10.0f;                      // 기본 박스 절반 크기 X
+    NewBox.Y = 10.0f;                      // 기본 박스 절반 크기 Y
+    NewBox.Z = 10.0f;                      // 기본 박스 절반 크기 Z
+    NewBox.Center = FVector::ZeroVector;   // 로컬 오프셋
+    FoundSetup->AggGeom.BoxElems.Add(NewBox);
+
+    // 4) 저장 플래그
+    // PhysicsAsset->MarkPackageDirty();
+
+    // 5) UI 리프레시
+    // bNeedsRefresh = true;
+}
+
+void FPhysicsSkeletonPanel::AddCapsuleToBone(const FName& BoneName)
+{
+    UBodySetup* FoundSetup;
+    if (!CheckAndCreateBodySetup(BoneName, FoundSetup)) return;
+
+    // FKSphylElem: Radius 와 HalfHeight 세팅
+    FKSphylElem NewCapsule;
+    NewCapsule.Radius     = 5.0f;           // 캡슐 반지름
+    NewCapsule.Length     = 20.0f;          // 캡슐 길이 (전체 길이에서 반지름 제외한 축 방향 절반길이)
+    NewCapsule.Center     = FVector::ZeroVector;
+    FoundSetup->AggGeom.SphylElems.Add(NewCapsule);
+
+    // PhysicsAsset->MarkPackageDirty();
+    // bNeedsRefresh = true;
+}
+void FPhysicsSkeletonPanel::AddConvexToBone(const FName& BoneName)
+{
+    UBodySetup* FoundSetup;
+    if (!CheckAndCreateBodySetup(BoneName, FoundSetup)) return;
+
+    // FKConvexElem: 기본 빈 컨벡스 메시 추가
+    FKConvexElem NewConvex;
+    // 최소한 하나의 점이라도 있어야 내부적으로 유효할 수 있으니, 임시로 원점 하나 추가
+    NewConvex.VertexData.Add(FVector::ZeroVector);
+    // ConvexElem.Transform, Rotation, Scale 등 필요 시 세팅 가능
+    FoundSetup->AggGeom.ConvexElems.Add(NewConvex);
+    
 }
 // 뼈가 선택되었을 때 호출되는 함수
 void FPhysicsSkeletonPanel::OnBoneSelected(int BoneIndex)
