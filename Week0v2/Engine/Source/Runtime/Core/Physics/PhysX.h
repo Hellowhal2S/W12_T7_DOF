@@ -94,15 +94,11 @@ struct FPhysX
         PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 0, 1, 0), *gMaterial);
         gScene->addActor(*GroundPlane);
         
-        PxTransform BoxTransform(PxVec3(0.0f, 0.0f, 100.0f)); 
-        PxBoxGeometry BoxGeometry(PxVec3(1.0f, 1.0f, 1.0f)); 
+        FGameObject BoxObject = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
+        BoxObject.rigidBody->setAngularDamping(0.5f);
+        BoxObject.rigidBody->setLinearDamping(0.5f);
+        BoxObject.rigidBody->setMass(10.0f);
 
-        PxRigidDynamic* BoxActor = PxCreateDynamic(*gPhysics, BoxTransform, BoxGeometry, *gMaterial, 10.0f);
-        BoxActor->setAngularDamping(0.5f);
-        BoxActor->setLinearDamping(0.5f);
-        BoxActor->setMass(10.0f);
-
-        gScene->addActor(*BoxActor);
         printf("Init Physics Scene\n");
     }
     
