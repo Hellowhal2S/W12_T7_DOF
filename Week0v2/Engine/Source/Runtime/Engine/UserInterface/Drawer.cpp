@@ -69,8 +69,10 @@ void FDrawer::OnResize(HWND hWnd)
 
 void FDrawer::RenderContentDrawer()
 {
+    int count =0;
     for (auto Obj : TObjectRange<USkeletalMesh>())
     {
+        count++;
         if (Obj->GetOuter() != nullptr)
             continue;
         ImGui::Selectable(GetData(Obj->GetRenderData().Name));
@@ -85,8 +87,10 @@ void FDrawer::RenderContentDrawer()
 
             // Mesh 및 Animation 설정
             USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(SkeletalMeshActor->GetRootComponent());
-            SkeletalMeshComponent->SetSkeletalMesh(FFBXLoader::CreateSkeletalMesh(Obj->GetRenderData().Name));
+            // SkeletalMeshComponent->SetSkeletalMesh(FFBXLoader::CreateSkeletalMesh(Obj->GetRenderData().Name));
+            SkeletalMeshComponent->SetSkeletalMesh(Obj);
             break;
         }
     }
+    UE_LOG(LogLevel::Warning,"USkeletal Count : %d", count);
 }
