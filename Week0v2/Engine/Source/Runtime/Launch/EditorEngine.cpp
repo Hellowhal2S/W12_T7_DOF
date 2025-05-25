@@ -72,6 +72,8 @@ void UEditorEngine::Tick(float DeltaTime)
     for (const auto& [key, WorldContext] : WorldContexts)
     {
         WorldContext->GetWorld()->Tick(WorldContext->LevelType, DeltaTime);
+        // Simulat
+        WorldContext->GetWorld()->Simulate(1.0f / 60.0f);
     }
 
     // TODO: 삭제된 오브젝트 참조하는 문제 수정하기
