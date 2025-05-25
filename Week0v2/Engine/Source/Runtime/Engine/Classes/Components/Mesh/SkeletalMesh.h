@@ -10,7 +10,7 @@ class USkeletalMesh : public UObject
 {
     DECLARE_CLASS(USkeletalMesh, UObject)
 public:
-    USkeletalMesh() = default;
+    USkeletalMesh();
     USkeletalMesh(const USkeletalMesh& Other);
     virtual ~USkeletalMesh() override = default;
     
@@ -37,12 +37,14 @@ public:
     int FindBoneIndexByName(const FString& BoneName) const;
 
     void ResetToOriginalPose();
+
+    UPhysicsAsset* GetPhysicsAsset() const { return PhysicsAsset; }
 private:
     
     FSkeletalMeshRenderData SkeletalMeshRenderData;
     USkeleton* Skeleton;
     TArray<FMaterialSlot*> MaterialSlots;
-    UPhysicsAsset* PhysicsAsset;
+    UPhysicsAsset* PhysicsAsset = nullptr;
     
     void UpdateChildBones(int ParentIndex);
     void ApplyRotationToBone(int BoneIndex, float DeltaAngleInDegrees, const FVector& RotationAxis);
