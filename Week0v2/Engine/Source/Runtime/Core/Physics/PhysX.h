@@ -47,13 +47,32 @@ struct FGameObject {
  // PxScene = UWorld->GetPhysicsScene()
 
 extern std::vector<FGameObject> gObjects;
+extern PxPvd* gPvd;
+extern PxPvdTransport* gTransport;
 
 struct FPhysX
 {
     static void InitPhysX() {
         gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
-        gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale());
+        
+        gPvd = PxCreatePvd(*gFoundation);
+        gTransport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
+        if (!gPvd || !gTransport)
+        {
+            printf("fail : (gPvd: %p, gTransport: %p)\n", gPvd, gTransport);
+            return;
+        }
+        bool success = gPvd->connect(*gTransport, PxPvdInstrumentationFlag::eALL);
+        if (!success)
+        {
+            printf("fail : PVD connect() \n");
+        }
+        
+
+        gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
         gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+        
+
 
         PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
         sceneDesc.gravity = PxVec3(0, -9.81f, 0);
@@ -61,8 +80,7 @@ struct FPhysX
         sceneDesc.cpuDispatcher = gDispatcher;
         sceneDesc.filterShader = PxDefaultSimulationFilterShader;
         gScene = gPhysics->createScene(sceneDesc);
-
-        // 2. PVD 연결
+        
         PxPvdSceneClient* PvdClient = gScene->getScenePvdClient();
         if (PvdClient)
         {
@@ -70,12 +88,14 @@ struct FPhysX
             PvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
             PvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
         }
+
+        PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();
         
         PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 1, 0, 0), *gMaterial);
         gScene->addActor(*GroundPlane);
         
-        PxTransform BoxTransform(PxVec3(0.0f, 100.0f, 0.0f)); // Y=100 위치에 배치
-        PxBoxGeometry BoxGeometry(PxVec3(1.0f, 1.0f, 1.0f)); // 크기 20x20x20
+        PxTransform BoxTransform(PxVec3(0.0f, 100.0f, 0.0f)); 
+        PxBoxGeometry BoxGeometry(PxVec3(1.0f, 1.0f, 1.0f)); 
 
         PxRigidDynamic* BoxActor = PxCreateDynamic(*gPhysics, BoxTransform, BoxGeometry, *gMaterial, 10.0f);
         BoxActor->setAngularDamping(0.5f);
@@ -85,8 +105,7 @@ struct FPhysX
         gScene->addActor(*BoxActor);
         printf("Init Physics Scene\n");
     }
-
-
+    
     static FGameObject CreateBox(const PxVec3& pos, const PxVec3& halfExtents) {
         FGameObject obj;
         PxTransform pose(pos);

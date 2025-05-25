@@ -55,12 +55,6 @@ public:
     static inline UINT GFrameCount = 0;
 
     std::shared_ptr<FWorldContext> GetWorldContextByKey(FName Key);
-    
-    physx::PxFoundation* PvdFoundation = nullptr;
-    physx::PxPvd* Pvd = nullptr;
-    physx::PxPvdTransport* PvdTransport = nullptr;
-    physx::PxPhysics* Physics = nullptr;
-
 protected:
     TMap<uint32, std::shared_ptr<FWorldContext>> WorldContexts;
 };
