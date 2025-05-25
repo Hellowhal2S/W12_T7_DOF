@@ -53,9 +53,14 @@ void UWorld::InitPhysicsScene()
 {
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0, 0, -9.81f);
-    gDispatcher = PxDefaultCpuDispatcherCreate(2);
+    gDispatcher = PxDefaultCpuDispatcherCreate(4);
     sceneDesc.cpuDispatcher = gDispatcher;
-    sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+    sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+    sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+    sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;;
+    sceneDesc.filterShader = FPhysX::MyFilterShader;
+    gMyCallback = new MySimulationEventCallback();
+    sceneDesc.simulationEventCallback = gMyCallback;
     gScene = gPhysics->createScene(sceneDesc);
         
     PxPvdSceneClient* PvdClient = gScene->getScenePvdClient();
@@ -75,6 +80,7 @@ void UWorld::InitPhysicsScene()
     BoxObject.rigidBody->setAngularDamping(0.5f);
     BoxObject.rigidBody->setLinearDamping(0.5f);
     BoxObject.rigidBody->setMass(10.0f);
+    BoxObject.scene = gScene;
 
     gObjects.push_back(BoxObject);
     
@@ -85,7 +91,9 @@ FGameObject UWorld::CreateBox(const PxVec3& pos, const PxVec3& halfExtents) {
     FGameObject obj;
     PxTransform pose(pos);
     obj.rigidBody = gPhysics->createRigidDynamic(pose);
+    obj.scene = gScene;
     PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtents), *gMaterial);
+    PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
     obj.rigidBody->attachShape(*shape);
     PxRigidBodyExt::updateMassAndInertia(*obj.rigidBody, 10.0f);
     gScene->addActor(*obj.rigidBody);

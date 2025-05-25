@@ -8,8 +8,8 @@
 #include "Serialization/FWindowsBinHelper.h"
 #include "UObject/ObjectFactory.h"
 #include "UObject/ObjectMacros.h"
-
 #include "Physics/PhysX.h"
+#define SCOPED_READ_LOCK(scene) physx::PxSceneReadLock readLock(scene);
 
 class APlayerController;
 class FObjectFactory;
@@ -25,9 +25,11 @@ using namespace DirectX;
 
 struct FGameObject {
     PxRigidDynamic* rigidBody = nullptr;
+    PxScene* scene = nullptr;
     XMMATRIX worldMatrix = XMMatrixIdentity();
 
     void UpdateFromPhysics() {
+        SCOPED_READ_LOCK(*scene);
         PxTransform t = rigidBody->getGlobalPose();
         PxMat44 mat(t);
         worldMatrix = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(&mat));
