@@ -7,6 +7,7 @@
 
 
 class UAssetManager;
+
 struct FWorldContext
 {
 public:
@@ -39,14 +40,13 @@ public:
 public:
     virtual void Init();
     virtual void Tick(float DeltaTime);
-    virtual void Release() {}
+    virtual void Release();
 
     UAssetManager* AssetManager = nullptr;
 
     static inline UINT GFrameCount = 0;
 
     std::shared_ptr<FWorldContext> GetWorldContextByKey(FName Key);
-
 protected:
     TMap<uint32, std::shared_ptr<FWorldContext>> WorldContexts;
 };
