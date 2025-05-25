@@ -26,6 +26,7 @@
 #include "Script/LuaManager.h"
 #include "UObject/UObjectArray.h"
 #include "UnrealEd/PrimitiveBatch.h"
+#include "ThirdParty/PhysX/include/PxPhysicsAPI.h"
 
 UWorld::UWorld(const UWorld& Other): UObject(Other)
                                    , defaultMapName(Other.defaultMapName)
@@ -43,6 +44,7 @@ void UWorld::InitWorld()
         Level = FObjectFactory::ConstructObject<ULevel>(this);
     }
     PreLoadResources();
+    
     if (WorldType == EWorldType::Editor)
     {
         LoadScene("NewScene.scene");
