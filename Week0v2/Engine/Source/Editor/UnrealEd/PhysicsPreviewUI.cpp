@@ -5,7 +5,7 @@
 #include "PropertyEditor/OutlinerEditorPanel.h"
 #include "PropertyEditor/PreviewControlEditorPanel.h"
 #include "PropertyEditor/PrimitiveDrawEditor.h"
-#include "PropertyEditor/SkeletonPanel.h"
+#include "ViewerPanel/PhysicsSkeletonPanel.h"
 #include "ViewerPanel/PhysicsToolBoxPanel.h"
 #include "ViewerPanel/ViewerControlPanel.h"
 #include "ViewerPanel/ViewerMenuPanel.h"
@@ -19,15 +19,13 @@ void FPhysicsPreviewUI::Initialize(SLevelEditor* LevelEditor, float Width, float
     // ControlPanel->Initialize(LevelEditor, Width, Height);
     Panels["PreviewControlPanel"] = ControlPanel;
     
-    auto PropertyPanel = std::make_shared<FSkeletonPanel>();
-    PropertyPanel->Initialize(Width, Height);   
-    Panels["PropertyPanel"] = PropertyPanel;
+    auto SkeletonPanel = std::make_shared<FPhysicsSkeletonPanel>();
+    SkeletonPanel->Initialize(Width, Height);   
+    Panels["SkeletonPanel"] = SkeletonPanel;
     
     auto PrimitiveDrawer = std::make_shared<PrimitiveDrawEditor>();
     Panels["PrimitiveDrawEditor"] = PrimitiveDrawer;
-
-    auto PhysicsToolboxPanel = std::make_shared<FPhysicsToolBoxPanel>();
-    Panels["ToolBox"] = PhysicsToolboxPanel;
+    
 }
 
 void FPhysicsPreviewUI::Render() const

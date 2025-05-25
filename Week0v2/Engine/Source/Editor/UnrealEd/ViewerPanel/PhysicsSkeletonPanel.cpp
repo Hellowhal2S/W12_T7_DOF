@@ -1,27 +1,18 @@
-#include "SkeletonPanel.h"
-
-#include <shellapi.h> // ShellExecute 관련 함수 정의 포함
+#include "PhysicsSkeletonPanel.h"
 
 #include "ImGUI/imgui.h"
 
-#include "tinyfiledialogs/tinyfiledialogs.h"
 
 #include "Engine/World.h"
 #include "Engine/FLoaderOBJ.h"
 #include "UnrealEd/ImGuiWidget.h"
 
-#include "Math/JungleMath.h"
 
-#include "Components/GameFramework/ProjectileMovementComponent.h"
 #include "Components/GameFramework/RotatingMovementComponent.h"
 #include "Components/LuaComponent.h"
-#include "Components/LightComponents/DirectionalLightComponent.h"
-#include "Components/LightComponents/PointLightComponent.h"
-#include "Components/LightComponents/SpotLightComponent.h"
+
 #include "Components/Mesh/StaticMesh.h"
-#include "Components/PrimitiveComponents/HeightFogComponent.h"
-#include "Components/PrimitiveComponents/UParticleSubUVComp.h"
-#include "Components/PrimitiveComponents/UTextComponent.h"
+
 #include "Components/PrimitiveComponents/MeshComponents/StaticMeshComponents/CubeComp.h"
 #include "Components/PrimitiveComponents/Physics/USphereShapeComponent.h"
 
@@ -33,40 +24,25 @@
 #include "Animation/Skeleton.h"
 #include "Components/PrimitiveComponents/MeshComponents/SkeletalMeshComponent.h"
 #include "Light/ShadowMapAtlas.h"
+#include "PhysicsEngine/BodySetup.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UObject/FunctionRegistry.h"
 
-void FSkeletonPanel::Initialize(float InWidth, float InHeight)
+void FPhysicsSkeletonPanel::Initialize(float InWidth, float InHeight)
 {
     Width = InWidth;
     Height = InHeight;
 }
 
-void FSkeletonPanel::Render()
+void FPhysicsSkeletonPanel::Render()
 {
     UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
     if (EditorEngine == nullptr)
     {
         return;
     }
+    ImVec2 WinSize = ImVec2(Width, Height);
     
-    // TODO PickedComponent 패널에서 뺴기 우선 임시용으로 배치
-    if ((GetAsyncKeyState(VK_DELETE) & 0x8000))
-    {
-        if (PickedComponent != nullptr)
-        {
-            if (World->GetSelectedActors().IsEmpty() || !World->GetSelectedActors().Contains(PickedComponent->GetOwner()))
-            {
-                PickedComponent = nullptr;
-            }
-        }
-    }
-    /* Pre Setup */
-    float PanelWidth = (Width) * 0.2f - 6.0f;
-    float PanelHeight = (Height) * 0.65f;
-
-    float PanelPosX = (Width) * 0.8f + 5.0f;
-    float PanelPosY = 70.0f;
 
     ImVec2 MinSize(140, 370);
     ImVec2 MaxSize(FLT_MAX, 900);
@@ -74,18 +50,16 @@ void FSkeletonPanel::Render()
     /* Min, Max Size */
     ImGui::SetNextWindowSizeConstraints(MinSize, MaxSize);
 
-    /* Panel Position */
-    ImGui::SetNextWindowPos(ImVec2(PanelPosX, PanelPosY), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(0, 70));
 
-    /* Panel Size */
-    ImGui::SetNextWindowSize(ImVec2(PanelWidth, PanelHeight), ImGuiCond_Always);
-
+    ImGui::SetNextWindowSize(ImVec2(WinSize.x * 0.3f, Height -70));
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 255)); 
+
     /* Panel Flags */
     ImGuiWindowFlags PanelFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse;
 
     /* Render Start */
-    ImGui::Begin("Skeleton", nullptr, PanelFlags);
+    ImGui::Begin("Skeleton Tree", nullptr, PanelFlags);
 
     // 프리뷰 월드에서는 오로지 하나의 액터만 선택 가능 (스켈레탈 메쉬 프리뷰인 경우, 스켈레탈 메쉬 액터)
     AActor* PickedActor = nullptr;
@@ -97,11 +71,6 @@ void FSkeletonPanel::Render()
 
     ImVec2 imageSize = ImVec2(256, 256); // 이미지 출력 크기
     
-
-    if (PickedActor) // Delegate Test
-    {
-        RenderDelegate(World->GetLevel());
-    }
 
     if (PickedActor)
     {
@@ -120,10 +89,10 @@ void FSkeletonPanel::Render()
         }
         else if (USkeletalMeshComponent* SkeletalMeshComponet = PickedActor->GetComponentByClass<USkeletalMeshComponent>())
         {
-            RenderForSkeletalMesh2(SkeletalMeshComponet);
+            RenderForSkeletalMesh(SkeletalMeshComponet);
+            PhysicsAsset = SkeletalMeshComponet->GetSkeletalMesh()->GetPhysicsAsset();
         }
     }
-    
 
     RenderShapeProperty(PickedActor);
 
@@ -132,174 +101,8 @@ void FSkeletonPanel::Render()
     ImGui::PopStyleColor();
 }
 
-void FSkeletonPanel::DrawSceneComponentTree(USceneComponent* Component, UActorComponent*& PickedComponent)
-{
-    if (!Component) return;
 
-    FString Label = *Component->GetName();
-    bool bSelected = (PickedComponent == Component);
-
-    ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
-    if (bSelected)
-        nodeFlags |= ImGuiTreeNodeFlags_Selected;
-
-    // 노드를 클릭 가능한 셀렉션으로 표시
-    bool bOpened = ImGui::TreeNodeEx(*Label, nodeFlags);
-
-    // 클릭되었을 때 선택 갱신
-    if (ImGui::IsItemClicked())
-    {
-        PickedComponent = Component;
-    }
-
-    // 자식 재귀 호출
-    if (bOpened)
-    {
-        for (USceneComponent* Child : Component->GetAttachChildren())
-        {
-            DrawSceneComponentTree(Child, PickedComponent);
-        }
-        ImGui::TreePop();
-    }
-}
-
-void FSkeletonPanel::DrawActorComponent(UActorComponent* Component, UActorComponent*& PickedComponent)
-{
-    if (!Component) return;
-
-    FString Label = *Component->GetName();
-    bool bSelected = (PickedComponent == Component);
-
-    ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow;
-    if (bSelected)
-        nodeFlags |= ImGuiTreeNodeFlags_Selected;
-
-    if (ImGui::Selectable(*Label, nodeFlags))
-    {
-        PickedComponent = Component;
-    }
-}
-
-void FSkeletonPanel::RGBToHSV(float r, float g, float b, float& h, float& s, float& v) const
-{
-    float mx = FMath::Max(r, FMath::Max(g, b));
-    float mn = FMath::Min(r, FMath::Min(g, b));
-    float delta = mx - mn;
-
-    v = mx;
-
-    if (mx == 0.0f) {
-        s = 0.0f;
-        h = 0.0f;
-        return;
-    }
-    else {
-        s = delta / mx;
-    }
-
-    if (delta < 1e-6) {
-        h = 0.0f;
-    }
-    else {
-        if (r >= mx) {
-            h = (g - b) / delta;
-        }
-        else if (g >= mx) {
-            h = 2.0f + (b - r) / delta;
-        }
-        else {
-            h = 4.0f + (r - g) / delta;
-        }
-        h *= 60.0f;
-        if (h < 0.0f) {
-            h += 360.0f;
-        }
-    }
-}
-
-void FSkeletonPanel::HSVToRGB(float h, float s, float v, float& r, float& g, float& b) const
-{
-    // h: 0~360, s:0~1, v:0~1
-    float c = v * s;
-    float hp = h / 60.0f;             // 0~6 구간
-    float x = c * (1.0f - fabsf(fmodf(hp, 2.0f) - 1.0f));
-    float m = v - c;
-
-    if (hp < 1.0f) { r = c;  g = x;  b = 0.0f; }
-    else if (hp < 2.0f) { r = x;  g = c;  b = 0.0f; }
-    else if (hp < 3.0f) { r = 0.0f; g = c;  b = x; }
-    else if (hp < 4.0f) { r = 0.0f; g = x;  b = c; }
-    else if (hp < 5.0f) { r = x;  g = 0.0f; b = c; }
-    else { r = c;  g = 0.0f; b = x; }
-
-    r += m;  g += m;  b += m;
-}
-
-void FSkeletonPanel::RenderForSkeletalMesh(USkeletalMeshComponent* SkeletalMeshComp)
-{
-    if (SkeletalMeshComp->GetSkeletalMesh() == nullptr)
-    {
-        return;
-    }
-
-    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-    if (ImGui::TreeNodeEx("Skeletal Mesh", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen)) // 트리 노드 생성
-    {
-        ImGui::Text("Skeletal Mesh");
-
-        std::vector<std::string> fbxFiles;
-        static const std::string folder = std::filesystem::current_path().string() + "/Contents/FBX";
-        for (auto& entry : std::filesystem::directory_iterator(folder))
-        {
-            if (!entry.is_regular_file()) continue;
-            if (entry.path().extension() == ".fbx")
-                fbxFiles.push_back(entry.path().filename().string());
-        }
-
-        static int currentIndex = 0;
-        const char* preview = fbxFiles.empty() 
-            ? "No .fbx files" 
-            : fbxFiles[currentIndex].c_str();
-
-        FString PreviewName = SkeletalMeshComp->GetSkeletalMesh()->GetRenderData().Name;
-        std::filesystem::path P = PreviewName;
-        FString FileName = FString( P.filename().string() ); 
-        
-        const TMap<FString, USkeletalMesh*> Meshes = FFBXLoader::GetSkeletalMeshes();
-        if (ImGui::BeginCombo("##SkeletalMesh", GetData(FileName), ImGuiComboFlags_None))
-        {
-            for (int i = 0; i < (int)fbxFiles.size(); ++i)
-            {
-                bool isSelected = (i == currentIndex);
-                if (ImGui::Selectable(fbxFiles[i].c_str(), isSelected))
-                {
-                    currentIndex = i;
-                    std::string fullPath = "FBX/" + fbxFiles[i];
-                    SkeletalMeshComp->LoadSkeletalMesh(fullPath);
-                }
-                if (isSelected)
-                    ImGui::SetItemDefaultFocus();
-            }
-            ImGui::EndCombo();
-        }
-
-        ImGui::Separator();
-
-        for (const auto& Bone : SkeletalMeshComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneTree)
-        {
-            for (const auto& RootBoneIndex : SkeletalMeshComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->RootBoneIndices)
-            {
-                if (Bone.BoneIndex == RootBoneIndex)
-                {
-                    RenderBoneHierarchy(SkeletalMeshComp->GetSkeletalMesh(), Bone.BoneIndex);
-                }
-            }
-        }
-        ImGui::TreePop();
-    }
-    ImGui::PopStyleColor();
-}
-void FSkeletonPanel::RenderForSkeletalMesh2(USkeletalMeshComponent* SkeletalMesh)
+void FPhysicsSkeletonPanel::RenderForSkeletalMesh(USkeletalMeshComponent* SkeletalMesh)
 {
     if (SkeletalMesh->GetSkeletalMesh() == nullptr)
     {
@@ -359,7 +162,6 @@ void FSkeletonPanel::RenderForSkeletalMesh2(USkeletalMeshComponent* SkeletalMesh
                     BoneRotations[SelectedBoneIndex] = FBoneRotation(XRotation, YRotation, ZRotation);
                     anyRotationChanged = true;
                 }
-                
             }
 
             // 회전값이 변경된 경우에만 적용
@@ -417,7 +219,7 @@ void FSkeletonPanel::RenderForSkeletalMesh2(USkeletalMeshComponent* SkeletalMesh
     ImGui::PopStyleColor();
 }
 
-void FSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int32 BoneIndex)
+void FPhysicsSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int32 BoneIndex)
 {
     // 범위 체크
     if (BoneIndex < 0 || BoneIndex >= SkeletalMesh->GetRenderData().Bones.Num())
@@ -474,6 +276,20 @@ void FSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int32 Bone
     {
         ImGui::PopStyleColor(3); // 스타일 색상 3개 복원 (Header, HeaderHovered, HeaderActive)
     }
+    if (ImGui::BeginPopupContextItem(
+            /* str_id = */ GetData(boneName),              // nullptr 로 하면 last item 을 자동으로 잡습니다.
+            /* flags  = */ ImGuiPopupFlags_MouseButtonRight))
+    {
+        if (ImGui::MenuItem("Add Sphere Collision"))
+            AddSphereToBone(boneName);
+        if (ImGui::MenuItem("Add Box Collision"))
+             AddBoxToBone(boneName);
+        if (ImGui::MenuItem("Add Capsule Collision"))
+             AddCapsuleToBone(boneName);
+        if (ImGui::MenuItem("Add Convex Collision"))
+            AddConvexToBone(boneName);
+        ImGui::EndPopup();
+    }
 
     // 노드가 클릭되었는지 확인
     if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
@@ -485,23 +301,150 @@ void FSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int32 Bone
     // 트리 노드가 열려있으면 자식 노드들을 재귀적으로 렌더링
     if (isOpen)
     {
+        if (PhysicsAsset)
+        {
+            for (UBodySetup* BodySetup : PhysicsAsset->BodySetup)
+            {
+                if (BodySetup && BodySetup->BoneName == boneName)
+                {
+                    if (ImGui::TreeNode("%s",GetData(boneName)))
+                    {
+                        const FKAggregateGeom& Agg = BodySetup->AggGeom;
+
+                        // 콜리전 프리미티브 출력
+                        for (const auto& S : Agg.SphereElems)
+                            ImGui::BulletText("Sphere  R=%.2f  Off=(%.2f,%.2f,%.2f)", S.Radius, S.Center.X, S.Center.Y, S.Center.Z);
+                        for (const auto& B : Agg.BoxElems)
+                            ImGui::BulletText("Box     E=(%.2f,%.2f,%.2f) Off=(%.2f,%.2f,%.2f)", B.X, B.Y, B.Z, B.Center.X, B.Center.Y, B.Center.Z);
+                        for (const auto& Sy : Agg.SphylElems)
+                            ImGui::BulletText("Capsule R=%.2f  L=%.2f  Off=(%.2f,%.2f,%.2f)", Sy.Radius, Sy.Length, Sy.Center.X, Sy.Center.Y, Sy.Center.Z);
+                        for (const auto& C : Agg.ConvexElems)
+                            ImGui::BulletText("Convex  Verts=%d", C.VertexData.Num());
+
+                        ImGui::TreePop();
+                    }
+                    break; // 하나만 매칭되면 탈출
+                }
+            }
+        }
         // 모든 자식 본 표시
         for (int32 ChildIndex : SkeletalMesh->GetSkeleton()->GetRefSkeletal()->BoneTree[BoneIndex].ChildIndices)
         {
             RenderBoneHierarchy(SkeletalMesh, ChildIndex);
         }
-
         ImGui::TreePop();
     }
 }
+bool FPhysicsSkeletonPanel::CheckAndCreateBodySetup(const FName& BoneName, UBodySetup*& FoundSetup)
+{
+    if (!PhysicsAsset) return false;
 
+    FoundSetup = nullptr;
+    for (UBodySetup* Setup : PhysicsAsset->BodySetup)
+    {
+        if (Setup && Setup->BoneName == BoneName)
+        {
+            FoundSetup = Setup;
+            break;
+        }
+    }
+    if (!FoundSetup)
+    {
+        FoundSetup = FObjectFactory::ConstructObject<UBodySetup>(PhysicsAsset);
+        FoundSetup->BoneName = BoneName;
+        PhysicsAsset->BodySetup.Add(FoundSetup);
+    }
+    return true;
+}
+
+void FPhysicsSkeletonPanel::AddSphereToBone(const FName& BoneName)
+{
+    UBodySetup* FoundSetup;
+    if (!CheckAndCreateBodySetup(BoneName, FoundSetup)) return;
+
+    // 2) 없으면 새로 생성
+    if (!FoundSetup)
+    {
+        FoundSetup = FObjectFactory::ConstructObject<UBodySetup>(PhysicsAsset);
+        FoundSetup->BoneName = BoneName;
+        PhysicsAsset->BodySetup.Add(FoundSetup);
+        // PhysicsAsset->MarkPackageDirty();
+    }
+
+    // 3) AggGeom에 SphereElem 추가
+    FKSphereElem NewSphere;
+    NewSphere.Radius = 10.0f;                // 기본값: 반경 10
+    NewSphere.Center = FVector::ZeroVector;  // 본 로컬 오프셋
+    FoundSetup->AggGeom.SphereElems.Add(NewSphere);
+
+    // PhysicsAsset->MarkPackageDirty();
+
+    // 4) UI 동기화(필요 시)
+    // bNeedsRefresh = true;
+}
+void FPhysicsSkeletonPanel::AddBoxToBone(const FName& BoneName)
+{
+    UBodySetup* FoundSetup;
+    if (!CheckAndCreateBodySetup(BoneName, FoundSetup)) return;
+
+    // 2) 없으면 새로 생성
+    if (!FoundSetup)
+    {
+        FoundSetup = FObjectFactory::ConstructObject<UBodySetup>(PhysicsAsset);
+        FoundSetup->BoneName = BoneName;
+        PhysicsAsset->BodySetup.Add(FoundSetup);
+    }
+
+    // 3) AggGeom에 BoxElem 추가
+    FKBoxElem NewBox;
+    NewBox.X = 10.0f;                      // 기본 박스 절반 크기 X
+    NewBox.Y = 10.0f;                      // 기본 박스 절반 크기 Y
+    NewBox.Z = 10.0f;                      // 기본 박스 절반 크기 Z
+    NewBox.Center = FVector::ZeroVector;   // 로컬 오프셋
+    FoundSetup->AggGeom.BoxElems.Add(NewBox);
+
+    // 4) 저장 플래그
+    // PhysicsAsset->MarkPackageDirty();
+
+    // 5) UI 리프레시
+    // bNeedsRefresh = true;
+}
+
+void FPhysicsSkeletonPanel::AddCapsuleToBone(const FName& BoneName)
+{
+    UBodySetup* FoundSetup;
+    if (!CheckAndCreateBodySetup(BoneName, FoundSetup)) return;
+
+    // FKSphylElem: Radius 와 HalfHeight 세팅
+    FKSphylElem NewCapsule;
+    NewCapsule.Radius     = 5.0f;           // 캡슐 반지름
+    NewCapsule.Length     = 20.0f;          // 캡슐 길이 (전체 길이에서 반지름 제외한 축 방향 절반길이)
+    NewCapsule.Center     = FVector::ZeroVector;
+    FoundSetup->AggGeom.SphylElems.Add(NewCapsule);
+
+    // PhysicsAsset->MarkPackageDirty();
+    // bNeedsRefresh = true;
+}
+void FPhysicsSkeletonPanel::AddConvexToBone(const FName& BoneName)
+{
+    UBodySetup* FoundSetup;
+    if (!CheckAndCreateBodySetup(BoneName, FoundSetup)) return;
+
+    // FKConvexElem: 기본 빈 컨벡스 메시 추가
+    FKConvexElem NewConvex;
+    // 최소한 하나의 점이라도 있어야 내부적으로 유효할 수 있으니, 임시로 원점 하나 추가
+    NewConvex.VertexData.Add(FVector::ZeroVector);
+    // ConvexElem.Transform, Rotation, Scale 등 필요 시 세팅 가능
+    FoundSetup->AggGeom.ConvexElems.Add(NewConvex);
+    
+}
 // 뼈가 선택되었을 때 호출되는 함수
-void FSkeletonPanel::OnBoneSelected(int BoneIndex)
+void FPhysicsSkeletonPanel::OnBoneSelected(int BoneIndex)
 {
     SelectedBoneIndex = BoneIndex;
 }
 
-void FSkeletonPanel::RenderShapeProperty(AActor* PickedActor)
+void FPhysicsSkeletonPanel::RenderShapeProperty(AActor* PickedActor)
 {
     if (PickedActor && PickedComponent && PickedComponent->IsA<UBoxShapeComponent>())
     {
@@ -562,42 +505,7 @@ void FSkeletonPanel::RenderShapeProperty(AActor* PickedActor)
     }
 }
 
-void FSkeletonPanel::RenderDelegate(ULevel* level)
-{
-    static AActor* SelectedActor = nullptr;
-    FString SelectedActorName;
-    SelectedActor ? SelectedActorName = SelectedActor->GetName() : SelectedActorName = "";
-    
-    if (ImGui::BeginCombo("Delegate Object", GetData(SelectedActorName), ImGuiComboFlags_None))
-    {
-        for (const auto& Actor : level->GetActors())
-        {
-            if (ImGui::Selectable(GetData(Actor->GetName()), false))
-            {
-                SelectedActor = Actor;
-            }
-        }
-        ImGui::EndCombo();
-    }
-    
-    static FString SelectedFunctionName = "";
-    if (SelectedActor)
-    {
-        if (ImGui::BeginCombo("Delegate Function", GetData(SelectedFunctionName), ImGuiComboFlags_None))
-        {
-            for (const auto& function : SelectedActor->FunctionRegistry()->GetRegisteredFunctions())
-            {
-                if (ImGui::Selectable(GetData(function.Key.ToString()), false))
-                {
-                    SelectedFunctionName = function.Key.ToString();
-                }
-            }
-            ImGui::EndCombo();
-        }
-    }
-}
-
-void FSkeletonPanel::OnResize(HWND hWnd)
+void FPhysicsSkeletonPanel::OnResize(HWND hWnd)
 {
     RECT clientRect;
     GetClientRect(hWnd, &clientRect);

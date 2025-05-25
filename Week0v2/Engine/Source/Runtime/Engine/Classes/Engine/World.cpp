@@ -1,6 +1,5 @@
 #include "World.h"
 
-#include "LaunchEngineLoop.h"
 #include "Renderer/Renderer.h"
 #include "PlayerCameraManager.h"
 #include "BaseGizmos/TransformGizmo.h"
@@ -14,13 +13,6 @@
 #include "Contents/GameManager.h"
 #include "Serialization/FWindowsBinHelper.h"
 
-#include "Actors/PointLightActor.h"
-#include "Components/LightComponents/PointLightComponent.h"
-#include "Components/Mesh/StaticMesh.h"
-#include "Components/PrimitiveComponents/MeshComponents/SkeletalMeshComponent.h"
-#include "Components/PrimitiveComponents/MeshComponents/StaticMeshComponents/SkySphereComponent.h"
-#include "Components/PrimitiveComponents/MeshComponents/StaticMeshComponents/StaticMeshComponent.h"
-#include "Components/PrimitiveComponents/Physics/UBoxShapeComponent.h"
 #include "GameFramework//PlayerController.h"
 #include "GameFramework/Character.h"
 #include "Script/LuaManager.h"
@@ -43,6 +35,10 @@ void UWorld::InitWorld()
         Level = FObjectFactory::ConstructObject<ULevel>(this);
     }
     PreLoadResources();
+
+    // PhysicsScene 초기화
+    InitPhysicsScene();
+    
     if (WorldType == EWorldType::Editor)
     {
         LoadScene("NewScene.scene");
@@ -51,6 +47,56 @@ void UWorld::InitWorld()
     {
         CreateBaseObject(WorldType);
     }
+}
+
+void UWorld::InitPhysicsScene()
+{
+    PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
+    sceneDesc.gravity = PxVec3(0, 0, -9.81f);
+    gDispatcher = PxDefaultCpuDispatcherCreate(2);
+    sceneDesc.cpuDispatcher = gDispatcher;
+    sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+    gScene = gPhysics->createScene(sceneDesc);
+        
+    PxPvdSceneClient* PvdClient = gScene->getScenePvdClient();
+    if (PvdClient)
+    {
+        PvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+        PvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+        PvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+    }
+
+    PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();
+        
+    PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 0, 1, 0), *gMaterial);
+    gScene->addActor(*GroundPlane);
+        
+    FGameObject BoxObject = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
+    BoxObject.rigidBody->setAngularDamping(0.5f);
+    BoxObject.rigidBody->setLinearDamping(0.5f);
+    BoxObject.rigidBody->setMass(10.0f);
+
+    gObjects.push_back(BoxObject);
+    
+    printf("Init Physics Scene\n");
+}
+
+FGameObject UWorld::CreateBox(const PxVec3& pos, const PxVec3& halfExtents) {
+    FGameObject obj;
+    PxTransform pose(pos);
+    obj.rigidBody = gPhysics->createRigidDynamic(pose);
+    PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtents), *gMaterial);
+    obj.rigidBody->attachShape(*shape);
+    PxRigidBodyExt::updateMassAndInertia(*obj.rigidBody, 10.0f);
+    gScene->addActor(*obj.rigidBody);
+    obj.UpdateFromPhysics();
+    return obj;
+}
+    
+void UWorld::Simulate(float dt) {
+    gScene->simulate(dt);
+    gScene->fetchResults(true);
+    for (auto& obj : gObjects) obj.UpdateFromPhysics();
 }
 
 void UWorld::LoadLevel(const FString& LevelName)
@@ -140,7 +186,14 @@ void UWorld::Release()
 	pickingGizmo = nullptr;
 	ReleaseBaseObject();
 
+    for (FGameObject& obj : gObjects) obj.rigidBody->release();
+    gObjects.clear();
     
+    gScene->release();
+    gScene = nullptr;
+    
+    gDispatcher->release();
+    gDispatcher = nullptr;
 }
 
 void UWorld::ClearScene()

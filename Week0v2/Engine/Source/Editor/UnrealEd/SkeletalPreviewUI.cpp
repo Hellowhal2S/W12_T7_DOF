@@ -5,7 +5,9 @@
 #include "PropertyEditor/OutlinerEditorPanel.h"
 #include "PropertyEditor/PreviewControlEditorPanel.h"
 #include "PropertyEditor/PrimitiveDrawEditor.h"
-#include "PropertyEditor/SkeletonPanel.h"
+
+
+#include "ViewerPanel/SkeletonPanel.h"
 
 void FSkeletalPreviewUI::Initialize(SLevelEditor* LevelEditor, float Width, float Height)
 {

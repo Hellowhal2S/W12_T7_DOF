@@ -9,6 +9,12 @@
 #include "Engine/FLoaderOBJ.h"
 #include "UObject/Casts.h"
 
+#include "PhysicsEngine/PhysicsAsset.h"
+
+USkeletalMesh::USkeletalMesh()
+{
+    PhysicsAsset = FObjectFactory::ConstructObject<UPhysicsAsset>(nullptr);
+}
 
 USkeletalMesh::USkeletalMesh(const USkeletalMesh& Other)
 : UObject(Other)
@@ -16,7 +22,7 @@ USkeletalMesh::USkeletalMesh(const USkeletalMesh& Other)
     , Skeleton(Other.Skeleton)
     , MaterialSlots(Other.MaterialSlots)
 {
-    
+    PhysicsAsset = FObjectFactory::ConstructObject<UPhysicsAsset>(nullptr);
 }
 
 uint32 USkeletalMesh::GetMaterialIndex(FName MaterialSlotName) const
@@ -201,6 +207,7 @@ USkeletalMesh* USkeletalMesh::Duplicate(UObject* InOuter)
 {
     USkeletalMesh* NewObject = FObjectFactory::ConstructObjectFrom<USkeletalMesh>(this, InOuter);
     NewObject->DuplicateSubObjects(this, InOuter);       // 깊은 복사 수행
+    // NewObject->PhysicsAsset = Cast<USkeletalMesh>(InOuter)->PhysicsAsset;
     return NewObject;
 }
 
