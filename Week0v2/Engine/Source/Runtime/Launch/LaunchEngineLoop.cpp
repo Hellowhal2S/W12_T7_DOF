@@ -82,9 +82,12 @@ void FEngineLoop::Tick()
             }
         }
         const float DeltaTime = static_cast<float>(ElapsedTime / 1000.f);
-
+        
         GEngine->Tick(DeltaTime);
 
+        // 시뮬레이트
+        FPhysX::Simulate(1.0f / 60.0f);
+        
         Render();
 
         GUObjectArray.ProcessPendingDestroyObjects();

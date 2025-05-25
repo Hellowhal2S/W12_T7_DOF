@@ -155,6 +155,48 @@ void UActorComponent::SaveComponentInfo(FActorComponentInfo& OutInfo)
     OutInfo.bIsRoot = GetOwner() && (GetOwner()->GetRootComponent() == this);
 }
 
+void UActorComponent::CreatePhysicsState(bool bAllowDeferral)
+{
+    // if (!bPhysicsStateCreated && WorldPrivate->GetPhysicsScene() && ShouldCreatePhysicsState())
+    // {
+    //     UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(this);
+    //
+    //     bool ShouldDefer = false;
+    //     if (UWorld* World = GetWorld())
+    //     {
+    //         if (World->GetAllowDeferredPhysicsStateCreation())
+    //         {
+    //             if (GEnableDeferredPhysicsCreation && bAllowDeferral && Primitive && !Primitive->GetGenerateOverlapEvents())
+    //             {
+    //                 if (UBodySetup* Setup = Primitive->GetBodySetup())
+    //                 {
+    //                     if (!Setup->bCreatedPhysicsMeshes)
+    //                     {
+    //                         ShouldDefer = true;
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //
+    //     }
+    //
+    //     if (ShouldDefer)
+    //     {
+    //         WorldPrivate->GetPhysicsScene()->DeferPhysicsStateCreation(Primitive);
+    //     }
+    //     else
+    //     {
+    //         // Call virtual
+    //         OnCreatePhysicsState();
+    //
+    //         checkf(bPhysicsStateCreated, TEXT("Failed to route OnCreatePhysicsState (%s)"), *GetFullName());
+    //
+    //         // Broadcast delegate
+    //         GlobalCreatePhysicsDelegate.Broadcast(this);
+    //     }
+    // }
+}
+
 void UActorComponent::LoadAndConstruct(const FActorComponentInfo& Info)
 {
     ComponentOrigin = Info.Origin;
