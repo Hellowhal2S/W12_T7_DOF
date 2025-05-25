@@ -6,6 +6,7 @@
 #include <vector>
 #include <DirectXMath.h>
 #include <PxPhysicsAPI.h>
+#include "PhysXCallback.h"
 
 
 struct FVector;
@@ -19,6 +20,7 @@ extern PxPhysics*              gPhysics;
 extern PxScene*                gScene;
 extern PxMaterial*             gMaterial;
 extern PxDefaultCpuDispatcher* gDispatcher;
+extern MySimulationEventCallback* gMyCallback;
 
 struct FGameObject {
     PxRigidDynamic* rigidBody = nullptr;
@@ -48,6 +50,26 @@ struct FGameObject {
 
 extern std::vector<FGameObject> gObjects;
 
+namespace CollisionGroup {
+    enum Enum : physx::PxU32 {
+        DEFAULT     = (1<<0),
+        ENVIRONMENT = (1<<1),
+        CHARACTER   = (1<<2),
+    };
+}
+
+inline physx::PxFilterData MakeFilterData(
+    CollisionGroup::Enum group,
+    physx::PxU32        collideMask
+){
+    physx::PxFilterData fd;
+    fd.word0 = static_cast<physx::PxU32>(group);  // 이 Shape의 그룹
+    fd.word1 = collideMask;                       // 충돌 허용 마스크
+    fd.word2 = 0;                                 // 필요시 Query 용도로 사용
+    fd.word3 = 0;
+    return fd;
+}
+
 struct FPhysX
 {
     static void InitPhysX() {
@@ -59,8 +81,34 @@ struct FPhysX
         sceneDesc.gravity = PxVec3(0, -9.81f, 0);
         gDispatcher = PxDefaultCpuDispatcherCreate(2);
         sceneDesc.cpuDispatcher = gDispatcher;
-        sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+        sceneDesc.filterShader = MyFilterShader;
+        gMyCallback = new MySimulationEventCallback();
+        sceneDesc.simulationEventCallback = gMyCallback;
         gScene = gPhysics->createScene(sceneDesc);
+    }
+
+    static PxFilterFlags MyFilterShader(
+        PxFilterObjectAttributes attr0, PxFilterData fd0,
+        PxFilterObjectAttributes attr1, PxFilterData fd1,
+        PxPairFlags& pairFlags,
+        const void* constantBlock,
+        PxU32 constantBlockSize)
+    {
+        // 1) 트리거 판정
+        if (PxFilterObjectIsTrigger(attr0) || PxFilterObjectIsTrigger(attr1)) {
+            pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
+            return PxFilterFlag::eDEFAULT;
+        }
+        // 2) 그룹 검사
+        if (!((fd0.word0 & fd1.word1) &&
+              (fd1.word0 & fd0.word1)))
+            return PxFilterFlag::eSUPPRESS;
+        // 3) Contact + Notification 플래그
+        pairFlags  = PxPairFlag::eCONTACT_DEFAULT
+                   | PxPairFlag::eNOTIFY_TOUCH_FOUND
+                   | PxPairFlag::eNOTIFY_TOUCH_PERSISTS
+                   | PxPairFlag::eNOTIFY_TOUCH_LOST;
+        return PxFilterFlag::eDEFAULT;
     }
 
     static FGameObject CreateBox(const PxVec3& pos, const PxVec3& halfExtents) {
@@ -68,6 +116,8 @@ struct FPhysX
         PxTransform pose(pos);
         obj.rigidBody = gPhysics->createRigidDynamic(pose);
         PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtents), *gMaterial);
+        PxFilterData fd = MakeFilterData(CollisionGroup::ENVIRONMENT, CollisionGroup::DEFAULT | CollisionGroup::ENVIRONMENT | CollisionGroup::CHARACTER);
+        shape->setSimulationFilterData(fd);
         obj.rigidBody->attachShape(*shape);
         PxRigidBodyExt::updateMassAndInertia(*obj.rigidBody, 10.0f);
         gScene->addActor(*obj.rigidBody);
@@ -81,6 +131,8 @@ struct FPhysX
         PxTransform pose(pos);
         obj.rigidBody = gPhysics->createRigidDynamic(pose);
         PxShape* shape = gPhysics->createShape(PxSphereGeometry(radius), *gMaterial);
+        PxFilterData fd = MakeFilterData(CollisionGroup::ENVIRONMENT, CollisionGroup::DEFAULT | CollisionGroup::ENVIRONMENT | CollisionGroup::CHARACTER);
+        shape->setSimulationFilterData(fd);
         obj.rigidBody->attachShape(*shape);
         PxRigidBodyExt::updateMassAndInertia(*obj.rigidBody, 10.0f);
         gScene->addActor(*obj.rigidBody);
@@ -94,6 +146,8 @@ struct FPhysX
         PxTransform pose(pos);
         obj.rigidBody = gPhysics->createRigidDynamic(pose);
         PxShape* shape = gPhysics->createShape(PxCapsuleGeometry(radius, halfHeight), *gMaterial);
+        PxFilterData fd = MakeFilterData(CollisionGroup::ENVIRONMENT, CollisionGroup::DEFAULT | CollisionGroup::ENVIRONMENT | CollisionGroup::CHARACTER);
+        shape->setSimulationFilterData(fd);
         obj.rigidBody->attachShape(*shape);
         PxRigidBodyExt::updateMassAndInertia(*obj.rigidBody, 10.0f);
         gScene->addActor(*obj.rigidBody);
