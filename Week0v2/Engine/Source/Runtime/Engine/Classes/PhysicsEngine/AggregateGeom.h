@@ -11,4 +11,7 @@ struct FKAggregateGeom
     TArray<FKBoxElem> BoxElems;
     TArray<FKSphylElem> SphylElems;
     TArray<FKConvexElem> ConvexElems;
+
+    void Serialize(FArchive& Ar);
+    void Deserialize(FArchive& Ar);
 };

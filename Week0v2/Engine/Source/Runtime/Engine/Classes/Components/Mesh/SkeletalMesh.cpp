@@ -203,6 +203,35 @@ void USkeletalMesh::ApplyRotationToBone(int BoneIndex, float DeltaAngleInDegrees
         rotationMatrix * SkeletalMeshRenderData.Bones[BoneIndex].LocalTransform;
 }
 
+void USkeletalMesh::Serialize(FArchive& Ar) const 
+{
+    //머터리얼 슬롯을 시리얼화 시켜야됨
+    Ar << SkeletalMeshRenderData << *Skeleton;
+    int num = MaterialSlots.Num();
+    Ar << num;
+    for (int i = 0; i < num; i++)
+    {
+        Ar << *MaterialSlots[i];
+    }
+    Ar << *PhysicsAsset;
+}
+
+void USkeletalMesh::Deserialize(FArchive& Ar)
+{
+    Skeleton = FObjectFactory::ConstructObject<USkeleton>(nullptr);
+    Ar >> SkeletalMeshRenderData >> *Skeleton;
+    int num;
+    Ar >> num;
+    for (int i = 0; i < num; i++)
+    {
+        FMaterialSlot* MaterialSlot = new FMaterialSlot();
+        Ar >> *MaterialSlot;
+        MaterialSlots.Add(MaterialSlot);
+    }
+    PhysicsAsset = FObjectFactory::ConstructObject<UPhysicsAsset>(nullptr);
+    Ar >> *PhysicsAsset;
+}
+
 USkeletalMesh* USkeletalMesh::Duplicate(UObject* InOuter)
 {
     USkeletalMesh* NewObject = FObjectFactory::ConstructObjectFrom<USkeletalMesh>(this, InOuter);

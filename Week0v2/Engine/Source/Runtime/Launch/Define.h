@@ -39,6 +39,10 @@ struct FMaterialSlot
 {
     class UMaterial* Material;
     FName MaterialSlotName;
+
+    void Serialize(FArchive& ar) const;
+    void Deserialize(FArchive& ar);
+    
     //FMeshUVChannelInfo UVChannelData;
 };
 

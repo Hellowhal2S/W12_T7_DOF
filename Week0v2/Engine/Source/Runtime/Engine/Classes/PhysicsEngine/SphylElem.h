@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "ShapeElem.h"
+#include "InputCore/InputCoreTypes.h"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 
@@ -17,4 +18,15 @@ public:
 
     /** This is of line-segment ie. add Radius to both ends to find total length. */
     float Length;
+    void Serialize(FArchive& Ar) const
+    {
+        FKShapeElem::Serialize(Ar);
+        Ar << Center << Rotation << Radius << Length;
+    }
+    void Deserialize(FArchive& Ar)
+    {
+        FKShapeElem::Deserialize(Ar);
+        Ar >> Center >> Rotation >> Radius >> Length;
+    }
+
 };

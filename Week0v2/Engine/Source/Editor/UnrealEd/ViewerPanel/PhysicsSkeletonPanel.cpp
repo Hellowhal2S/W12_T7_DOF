@@ -2,11 +2,9 @@
 
 #include "ImGUI/imgui.h"
 
-
 #include "Engine/World.h"
 #include "Engine/FLoaderOBJ.h"
 #include "UnrealEd/ImGuiWidget.h"
-
 
 #include "Components/GameFramework/RotatingMovementComponent.h"
 #include "Components/LuaComponent.h"
@@ -27,7 +25,6 @@
 #include "PhysicsEngine/BodySetup.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UnrealEd/PrimitiveBatch.h"
-#include "UObject/FunctionRegistry.h"
 
 void FPhysicsSkeletonPanel::Initialize(float InWidth, float InHeight)
 {

@@ -2,6 +2,7 @@
 #include "UObject/Object.h"
 #include "UObject/ObjectMacros.h"
 
+
 class UBodySetup;
 
 class UPhysicsAsset : public UObject
@@ -12,4 +13,6 @@ public:
     ~UPhysicsAsset() = default;
 
     TArray<UBodySetup*> BodySetup;
+    void Serialize(FArchive& Ar);
+    void Deserialize(FArchive& Ar);
 };

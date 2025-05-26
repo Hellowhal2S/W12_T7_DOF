@@ -7,6 +7,7 @@
 #include "PropertyEditor/PrimitiveDrawEditor.h"
 #include "ViewerPanel/PhysicsSkeletonPanel.h"
 #include "ViewerPanel/PhysicsToolBoxPanel.h"
+#include "ViewerPanel/SkeletalViewerControlPanel.h"
 #include "ViewerPanel/ViewerControlPanel.h"
 #include "ViewerPanel/ViewerMenuPanel.h"
 
@@ -15,7 +16,7 @@ void FPhysicsPreviewUI::Initialize(SLevelEditor* LevelEditor, float Width, float
     auto MenuPanel = std::make_shared<ViewerMenuPanel>();
     Panels["MenuPanel"] = MenuPanel;
     
-    auto ControlPanel = std::make_shared<ViewerControlPanel>();
+    auto ControlPanel = std::make_shared<FSkeletalViewerControlPanel>();
     // ControlPanel->Initialize(LevelEditor, Width, Height);
     Panels["PreviewControlPanel"] = ControlPanel;
     
@@ -64,4 +65,9 @@ void FPhysicsPreviewUI::SetWorld(UWorld* InWorld)
 std::shared_ptr<UEditorPanel> FPhysicsPreviewUI::GetEditorPanel(const FString& PanelId)
 {
     return Panels[PanelId];
+}
+
+void FPhysicsPreviewUI::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
+{
+    Panels["PreviewControlPanel"].get()->SetSkeletalMesh(InSkeletalMesh);
 }

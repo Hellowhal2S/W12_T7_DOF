@@ -18,4 +18,14 @@ struct FKBoxElem : public FKShapeElem
 
     /** Extent of the box along the z-axis */
     float Z;
+    void Serialize(FArchive& Ar) const 
+    {
+        FKShapeElem::Serialize(Ar);
+        Ar << Center << Rotation << X << Y << Z;
+    }
+    void Deserialize(FArchive& Ar)
+    {
+        FKShapeElem::Deserialize(Ar);
+        Ar >> Center >> Rotation >> X >> Y >> Z;
+    }
 };

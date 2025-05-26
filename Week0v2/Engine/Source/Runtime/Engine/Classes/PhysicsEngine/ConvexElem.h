@@ -17,4 +17,17 @@ struct FKConvexElem : public FKShapeElem
 private:
     /** Transform of this element */
     FTransform Transform;
+public:
+    inline void Serialize(FArchive& Ar) const 
+    {
+        Ar << VertexData;
+        Ar << IndexData;
+
+    }
+
+    inline void Deserialize(FArchive& Ar)
+    {
+        Ar >> VertexData;
+        Ar >> IndexData;
+    }
 };
