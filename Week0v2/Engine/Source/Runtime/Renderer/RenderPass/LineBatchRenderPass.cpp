@@ -10,14 +10,23 @@
 #include "LaunchEngineLoop.h"
 #include "ShowFlags.h"
 #include "Actors/Light.h"
+#include "Actors/SkeletalMeshActor.h"
 #include "Components/LightComponents/DirectionalLightComponent.h"
 #include "LevelEditor/SLevelEditor.h"
 #include "Components/LightComponents/PointLightComponent.h"
 #include "Components/LightComponents/SpotLightComponent.h"
+#include "Components/Mesh/SkeletalMesh.h"
+#include "Components/PrimitiveComponents/MeshComponents/SkeletalMeshComponent.h"
 #include "Components/PrimitiveComponents/Physics/UShapeComponent.h"
 #include "Components/PrimitiveComponents/Physics/UCapsuleShapeComponent.h"
 #include "Components/PrimitiveComponents/Physics/USphereShapeComponent.h"
 #include "Components/PrimitiveComponents/Physics/UBoxShapeComponent.h"
+#include "Engine/AssetManager.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "PhysicsEngine/BoxElem.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/SphereElem.h"
+#include "PhysicsEngine/SphylElem.h"
 #include "Renderer/Renderer.h"
 #include "Renderer/RenderResourceManager.h"
 #include "UObject/UObjectIterator.h"
@@ -53,7 +62,17 @@ void FLineBatchRenderPass::AddRenderObjectsToRenderPass(UWorld* World)
     }
 
     UPrimitiveBatch& PrimitiveBatch = UPrimitiveBatch::GetInstance();
-
+    if (World->WorldType == EWorldType::EditorPhysicsPreview)
+    {
+        for (auto Actor : World->GetActors())
+        {
+            if (Cast<ASkeletalMeshActor>(Actor))
+            {
+                DrawDebugPhysics(Cast<ASkeletalMeshActor>(Actor)->GetSkeletalMeshComponent());
+            }
+        }
+    }
+    
     for (UShapeComponent* ShapeComponent : TObjectRange<UShapeComponent>())
     {
         if (ShapeComponent->GetWorld() != World)
@@ -279,6 +298,89 @@ void FLineBatchRenderPass::ClearRenderObjects()
 {
     ShapeComponents.Empty();
     CapsuleShapeComponents.Empty();
+}
+
+void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh)
+{
+            // 싱글톤 얻어오기
+    UPrimitiveBatch& PB = UPrimitiveBatch::GetInstance();
+    
+    const FVector4 ColorSphere  = FVector4(0.6f, 0.2f, 0.8f, 1.0f);
+    const FVector4 ColorBox     = FVector4(0.6f, 0.2f, 0.8f, 1.0f);
+    const FVector4 ColorCapsule = FVector4(0.6f, 0.2f, 0.8f, 1.0f);
+    
+    // --- UBodySetup 기반 시각화 예시 ---
+    if (UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetSkeletalMesh()->GetPhysicsAsset())
+    {
+        for (UBodySetup* BS : PhysicsAsset->BodySetup)
+        {
+            if (!BS) continue;
+
+            FTransform boneXF;
+            FMatrix boneM;
+            // 본에 매핑된 월드 트랜스폼(본 월드 매트릭스) 얻어오기
+            for (auto Bone : SkeletalMesh->GetSkeletalMesh()->GetRenderData().Bones)
+            {
+                if (Bone.BoneName == BS->BoneName.ToString())
+                {
+                    boneXF.SetLocation(Bone.GlobalTransform.GetTranslationVector());
+                    FRotator BoneRot;
+                    Bone.GlobalTransform.GetRotationMatrix(BoneRot);
+                    boneXF.SetRotation(BoneRot.ToQuaternion());
+                    boneXF.SetScale(Bone.GlobalTransform.GetScaleVector());
+                    boneM = Bone.GlobalTransform;
+                }
+            }
+           boneM =  boneM*SkeletalMesh->GetWorldMatrix();
+            // FMatrix boneM    = boneXF.ToMatrixWithScale();
+
+            // 1) Spheres
+            for (const FKSphereElem& S : BS->AggGeom.SphereElems)
+            {
+                // 로컬 센터를 월드로 변환
+                FVector centerWS = boneM.TransformPosition(S.Center);
+                PB.AddSphere(centerWS, S.Radius, ColorSphere);
+            }
+
+            // 2) Boxes (AABB 로 그리기)
+            for (const FKBoxElem& B : BS->AggGeom.BoxElems)
+            {
+                // BoxElem.Center 는 로컬 오프셋, (X,Y,Z) 는 half‐extents
+                FBoundingBox localAABB(
+                    FVector(-B.X, -B.Y, -B.Z),
+                    FVector( B.X,  B.Y,  B.Z)
+                );
+                FVector worldCenter = boneM.TransformPosition(B.Center);
+                PB.AddAABB(localAABB, worldCenter, boneM);
+            }
+
+            // 3) Capsules
+            for (const FKSphylElem& C : BS->AggGeom.SphylElems)
+            {
+                // 로컬 -> 월드
+                FVector centerWS = boneM.TransformPosition(C.Center);
+                // 캡슐 축 방향: 로컬 Z 축을 UpVector 로 가정
+                FVector upWS = FMatrix::TransformVector(FVector::UpVector,boneM);
+                PB.AddCapsule(centerWS, upWS, C.Length * 0.5f, C.Radius, ColorCapsule);
+            }
+
+            // 4) Convex (간단히 OBB 로 감싸기)
+            // for (const FKConvexElem& X : BS->AggGeom.ConvexElems)
+            // {
+            //     // ConvexElem.VertexData 를 최소한 2개 이상 가지고
+            //     if (X.VertexData.Num() >= 2)
+            //     {
+            //         // 로컬 버텍스 중 AABB 계산
+            //         FBoundingBox localBB;
+            //         for (const FVector& V : X.VertexData)
+            //             localBB = localBB +  V;
+            //
+            //         FVector worldCenter = boneM.TransformPosition(localBB.GetCenter());
+            //         PB.AddOBB(localBB, worldCenter, boneM);
+            //     }
+            // }
+        }
+    }
 }
 
 void FLineBatchRenderPass::UpdateBatchResources()

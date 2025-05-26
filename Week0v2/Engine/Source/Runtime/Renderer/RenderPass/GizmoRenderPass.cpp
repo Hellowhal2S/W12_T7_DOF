@@ -21,7 +21,7 @@ void FGizmoRenderPass::AddRenderObjectsToRenderPass(UWorld* World)
 {
     for (UGizmoBaseComponent* GizmoBaseComponent : TObjectRange<UGizmoBaseComponent>())
     {
-        if ((GizmoBaseComponent->GetWorld()->WorldType != EWorldType::Editor && GizmoBaseComponent->GetWorld()->WorldType != EWorldType::EditorPreview) || GizmoBaseComponent->GetWorld() != World)
+        if ((GizmoBaseComponent->GetWorld()->WorldType != EWorldType::Editor && GizmoBaseComponent->GetWorld()->WorldType != EWorldType::EditorPreview && GizmoBaseComponent->GetWorld()->WorldType != EWorldType::EditorPhysicsPreview) || GizmoBaseComponent->GetWorld() != World)
         {
             continue;
         }
