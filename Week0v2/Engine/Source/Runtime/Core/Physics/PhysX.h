@@ -16,6 +16,7 @@ extern PxPvdTransport*         gTransport;
 extern PxMaterial*             gMaterial;
 extern PxDefaultCpuDispatcher* gDispatcher;
 extern MySimulationEventCallback* gMyCallback;
+extern PxCooking*                 gCooking;
 
 struct FPhysX
 {
@@ -83,6 +84,7 @@ struct FPhysX
         
 
         gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
+        gCooking = PxCreateCooking(PX_PHYSICS_VERSION, *gFoundation, PxCookingParams(PxTolerancesScale()));
         gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
         PxInitExtensions(*gPhysics, gPvd);
     }
