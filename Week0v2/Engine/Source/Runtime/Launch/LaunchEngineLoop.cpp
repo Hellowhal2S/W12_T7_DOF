@@ -46,8 +46,8 @@ int32 FEngineLoop::Init(const HINSTANCE hInstance)
         // GEngine = FObjectFactory::ConstructObject<UEngine>();
     }
 
-    GEngine->Init();
     FPhysX::InitPhysX();
+    GEngine->Init();
     for (const auto& AppWnd : AppWindows)
     {
         UpdateUI(AppWnd);
@@ -85,9 +85,6 @@ void FEngineLoop::Tick()
         GDeltaTime = static_cast<float>(ElapsedTime / 1000.f);
         
         GEngine->Tick(GDeltaTime);
-
-        // 시뮬레이트
-        FPhysX::Simulate(1.0f / 60.0f);
         
         Render();
 

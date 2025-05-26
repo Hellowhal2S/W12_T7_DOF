@@ -1,5 +1,4 @@
 #pragma once
-#include <PxScene.h>
 
 #include "Define.h"
 #include "EngineBaseTypes.h"
@@ -9,6 +8,8 @@
 #include "Serialization/FWindowsBinHelper.h"
 #include "UObject/ObjectFactory.h"
 #include "UObject/ObjectMacros.h"
+#include "Physics/PhysX.h"
+#define SCOPED_READ_LOCK(scene) physx::PxSceneReadLock readLock(scene);
 
 class APlayerController;
 class FObjectFactory;
@@ -20,7 +21,20 @@ class USceneComponent;
 class UTransformGizmo;
 class USkeletalMesh;
 
-using namespace physx;
+using namespace DirectX;
+
+struct FGameObject {
+    PxRigidDynamic* rigidBody = nullptr;
+    PxScene* scene = nullptr;
+    XMMATRIX worldMatrix = XMMatrixIdentity();
+
+    void UpdateFromPhysics() {
+        SCOPED_READ_LOCK(*scene);
+        PxTransform t = rigidBody->getGlobalPose();
+        PxMat44 mat(t);
+        worldMatrix = XMLoadFloat4x4(reinterpret_cast<const XMFLOAT4X4*>(&mat));
+    }
+};
 
 class UWorld final : public UObject
 {
@@ -31,6 +45,12 @@ public:
     UWorld(const UWorld& Other);
 
     void InitWorld();
+
+    // PhysicsX 함수
+    void InitPhysicsScene();
+    FGameObject CreateBox(const PxVec3& pos, const PxVec3& halfExtents);
+    void Simulate(float dt);
+    
     void LoadLevel(const FString& LevelName);
     void PreLoadResources();
     void CreateBaseObject(EWorldType::Type WorldType);
@@ -119,10 +139,12 @@ public:
 
 public:
     /** Returns a pointer to the physics scene for this world. */
-    PxScene* GetPhysicsScene() const { return PhysicsScene; }
-
+    PxScene* GetPhysicsScene() const { return gScene; }
+    
 private:
-    PxScene* PhysicsScene;
+    PxScene* gScene;
+    PxDefaultCpuDispatcher* gDispatcher;
+    std::vector<FGameObject> gObjects;
     
 public:
     // serialize
