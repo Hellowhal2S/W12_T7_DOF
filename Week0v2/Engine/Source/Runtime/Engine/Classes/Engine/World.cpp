@@ -74,15 +74,31 @@ void UWorld::InitPhysicsScene()
     PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();
         
     PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 0, 1, 0), *gMaterial);
+    PxShape* planeShape;
+    GroundPlane->getShapes(&planeShape, 1);
+    planeShape->setSimulationFilterData(FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All));
+    GroundPlane->setName("GroundPlane");
     gScene->addActor(*GroundPlane);
-        
+
     FGameObject BoxObject = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
     BoxObject.rigidBody->setAngularDamping(0.5f);
     BoxObject.rigidBody->setLinearDamping(0.5f);
     BoxObject.rigidBody->setMass(10.0f);
+    BoxObject.rigidBody->setName("Box1");
     BoxObject.scene = gScene;
-
     gObjects.push_back(BoxObject);
+        
+    FGameObject BoxObject2 = CreateBox(PxVec3(0, 0, 1), PxVec3(5, 5, 1));
+    BoxObject2.rigidBody->setAngularDamping(0.5f);
+    BoxObject2.rigidBody->setLinearDamping(0.5f);
+    BoxObject2.rigidBody->setMass(10.0f);
+    BoxObject2.rigidBody->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
+    BoxObject2.rigidBody->setName("Box2");
+    BoxObject2.scene = gScene;
+    gObjects.push_back(BoxObject2);
+
+    PxU32 numStatics = gScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC);
+    UE_LOG(LogLevel::Display, "Static actors in scene: %d\n", numStatics);
     
     printf("Init Physics Scene\n");
 }
@@ -94,6 +110,7 @@ FGameObject UWorld::CreateBox(const PxVec3& pos, const PxVec3& halfExtents) {
     obj.scene = gScene;
     PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtents), *gMaterial);
     PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+    shape->setSimulationFilterData(fd);
     obj.rigidBody->attachShape(*shape);
     PxRigidBodyExt::updateMassAndInertia(*obj.rigidBody, 10.0f);
     gScene->addActor(*obj.rigidBody);
