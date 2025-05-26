@@ -80,44 +80,85 @@ void UWorld::InitPhysicsScene()
     GroundPlane->setName("GroundPlane");
     gScene->addActor(*GroundPlane);
 
-    FGameObject BoxObject = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
-    BoxObject.rigidBody->setAngularDamping(0.5f);
-    BoxObject.rigidBody->setLinearDamping(0.5f);
-    BoxObject.rigidBody->setMass(10.0f);
-    BoxObject.rigidBody->setName("Box1");
-    BoxObject.scene = gScene;
-    gObjects.push_back(BoxObject);
+    FGameObject FallingBox = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
+    if (auto* rigidDynamic = FallingBox.rigidBody->is<physx::PxRigidDynamic>())
+    {
+        rigidDynamic->setAngularDamping(0.5f);
+        rigidDynamic->setLinearDamping (0.5f);
+        rigidDynamic->setMass          (10.0f);
+    }
+    FallingBox.rigidBody->setName("FallingBox");
+    FallingBox.scene = gScene;
+    gObjects.push_back(FallingBox);
         
-    FGameObject BoxObject2 = CreateBox(PxVec3(0, 0, 1), PxVec3(5, 5, 1));
-    BoxObject2.rigidBody->setAngularDamping(0.5f);
-    BoxObject2.rigidBody->setLinearDamping(0.5f);
-    BoxObject2.rigidBody->setMass(10.0f);
-    BoxObject2.rigidBody->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, true);
-    BoxObject2.rigidBody->setName("Box2");
-    BoxObject2.scene = gScene;
-    gObjects.push_back(BoxObject2);
-
-    PxU32 numStatics = gScene->getNbActors(PxActorTypeFlag::eRIGID_STATIC);
-    UE_LOG(LogLevel::Display, "Static actors in scene: %d\n", numStatics);
+    FGameObject BigBox = CreateBox(PxVec3(0, 0, 1),
+                                   PxVec3(100, 100, 1),
+                                   FPhysX::EActorType::Static);
+    if (auto* rigidDynamic = BigBox.rigidBody->is<physx::PxRigidDynamic>())
+    {
+        rigidDynamic->setAngularDamping(0.5f);
+        rigidDynamic->setLinearDamping (0.5f);
+        rigidDynamic->setMass          (10.0f);
+    }
+    BigBox.rigidBody->setName("BigBox");
+    BigBox.scene = gScene;
+    gObjects.push_back(BigBox);
     
+    FGameObject TriggerBox = CreateBox(
+                PxVec3(0, 0, 20),
+            PxVec3(5, 5, 1),
+                    FPhysX::EActorType::Static,
+                    PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE);
+    TriggerBox.rigidBody->setName("TriggerBox");
+    TriggerBox.scene = gScene;
+    gObjects.push_back(TriggerBox);
+
     printf("Init Physics Scene\n");
 }
 
-FGameObject UWorld::CreateBox(const PxVec3& pos, const PxVec3& halfExtents) {
+FGameObject UWorld::CreateBox(
+    const PxVec3&     pos,
+    const PxVec3&     halfExtents,
+    FPhysX::EActorType actorType,
+    const PxShapeFlags& shapeFlags
+) const
+{
     FGameObject obj;
     PxTransform pose(pos);
-    obj.rigidBody = gPhysics->createRigidDynamic(pose);
+    PxRigidActor* actor = nullptr;
+    if (actorType == FPhysX::EActorType::Dynamic)
+        actor = gPhysics->createRigidDynamic(pose);
+    else
+        actor = gPhysics->createRigidStatic (pose);
+    obj.rigidBody = actor;
     obj.scene = gScene;
+    
     PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtents), *gMaterial);
-    PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
-    shape->setSimulationFilterData(fd);
+    shape->setFlags(shapeFlags);
+    PxFilterData filterData = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::BoxCollider, FPhysX::ECollisionGroup::All);
+    shape->setSimulationFilterData(filterData);
     obj.rigidBody->attachShape(*shape);
-    PxRigidBodyExt::updateMassAndInertia(*obj.rigidBody, 10.0f);
+
+    if (actorType == FPhysX::EActorType::Dynamic)
+    {
+        if (auto* rigidDynamic = obj.rigidBody->is<physx::PxRigidDynamic>())
+        {
+            // 질량·관성 업데이트
+            PxRigidBodyExt::updateMassAndInertia(*rigidDynamic, 10.0f);
+
+            // onWake/onSleep 알림 켜기
+            rigidDynamic->setActorFlag(PxActorFlag::eSEND_SLEEP_NOTIFIES, true);
+            
+            // pose integration preview(=onAdvance) 켜기
+            rigidDynamic->setRigidBodyFlag(PxRigidBodyFlag::eENABLE_POSE_INTEGRATION_PREVIEW, true);
+        }   
+    }
+    
     gScene->addActor(*obj.rigidBody);
     obj.UpdateFromPhysics();
     return obj;
 }
-    
+
 void UWorld::Simulate(float dt) {
     gScene->simulate(dt);
     gScene->fetchResults(true);

@@ -24,7 +24,7 @@ class USkeletalMesh;
 using namespace DirectX;
 
 struct FGameObject {
-    PxRigidDynamic* rigidBody = nullptr;
+    PxRigidActor* rigidBody = nullptr;
     PxScene* scene = nullptr;
     XMMATRIX worldMatrix = XMMatrixIdentity();
 
@@ -48,7 +48,12 @@ public:
 
     // PhysicsX 함수
     void InitPhysicsScene();
-    FGameObject CreateBox(const PxVec3& pos, const PxVec3& halfExtents);
+    FGameObject CreateBox(
+        const PxVec3&      pos,
+        const PxVec3&      halfExtents,
+        FPhysX::EActorType actorType    = FPhysX::EActorType::Dynamic,
+        const PxShapeFlags& shapeFlags   = PxShapeFlag::eSIMULATION_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE
+    ) const;
     void Simulate(float dt);
     
     void LoadLevel(const FString& LevelName);
