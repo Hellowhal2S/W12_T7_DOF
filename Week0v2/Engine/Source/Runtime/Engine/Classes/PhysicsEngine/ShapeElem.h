@@ -22,5 +22,6 @@ struct FKShapeElem
     
     FName Name;
 
+    bool bEnableCollision = true;
     EAggCollisionShape::Type ShapeType;
 };

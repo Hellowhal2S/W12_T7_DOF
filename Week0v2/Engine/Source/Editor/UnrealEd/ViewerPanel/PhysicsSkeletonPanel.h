@@ -61,6 +61,7 @@ private:
     bool bFirstFrame = true;
 
     UPhysicsAsset* PhysicsAsset = nullptr;
+    UBodySetup*       SelectedBodySetup = nullptr;  // ← 추가
 
     //FBX
 private:
@@ -70,7 +71,7 @@ private:
     
     TMap<int, FBoneRotation> BoneRotations;
     TMap<int, FBoneRotation> PrevBoneRotations;
-
+    
     FSkeletonDetailPanel PhysicsDetailPanel;
 };
 

@@ -122,7 +122,6 @@ void FSkeletonPanel::Render()
     RenderShapeProperty(PickedActor);
 
     ImGui::End();
-    PhysicsDetailPanel.Render();
     ImGui::PopStyleColor();
 }
 

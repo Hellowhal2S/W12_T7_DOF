@@ -95,9 +95,9 @@ void FPhysicsSkeletonPanel::Render()
     }
 
     RenderShapeProperty(PickedActor);
-
     ImGui::End();
-    PhysicsDetailPanel.Render();
+    PhysicsDetailPanel.Render(SelectedBodySetup);
+ 
     ImGui::PopStyleColor();
 }
 
@@ -309,6 +309,11 @@ void FPhysicsSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int
                 {
                     if (ImGui::TreeNode("%s",GetData(boneName)))
                     {
+                        if (ImGui::IsItemClicked())
+                        {
+                            SelectedBodySetup = BodySetup;
+                        }
+
                         const FKAggregateGeom& Agg = BodySetup->AggGeom;
 
                         // 콜리전 프리미티브 출력
