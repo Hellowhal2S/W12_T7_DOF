@@ -10,6 +10,8 @@
 #include "Level.h"
 #include "Engine/FBXLoader.h"
 #include "Actors/ADodge.h"
+#include "Animation/Skeleton.h"
+#include "Components/PrimitiveComponents/MeshComponents/SkeletalMeshComponent.h"
 #include "Contents/GameManager.h"
 #include "Serialization/FWindowsBinHelper.h"
 
@@ -52,7 +54,7 @@ void UWorld::InitWorld()
 void UWorld::InitPhysicsScene()
 {
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
-    sceneDesc.gravity = PxVec3(0, 0, -9.81f);
+    sceneDesc.gravity = PxVec3(0, 0, -981.f);
     gDispatcher = PxDefaultCpuDispatcherCreate(4);
     sceneDesc.cpuDispatcher = gDispatcher;
     sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
@@ -109,6 +111,48 @@ FGameObject UWorld::CreateBox(const PxVec3& pos, const PxVec3& halfExtents) {
 void UWorld::Simulate(float dt) {
     gScene->simulate(dt);
     gScene->fetchResults(true);
+    
+    // 예시: 모든 동적(Dynamic) 및 정적(Static) 바디 가져오기
+    PxU32 bufferSize = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
+    std::vector<PxActor*> actorBuffer(bufferSize);
+    gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actorBuffer.data(), bufferSize);
+    for (PxU32 i = 0; i < bufferSize; ++i) {
+        PxActor* actor = actorBuffer[i];
+        if (!actor->userData) continue;
+
+        // actor를 사용 (예: userData로 엔진 오브젝트 찾기, pose 읽기 등)
+        PxTransform pose;
+        if (PxRigidDynamic* dyn = actor->is<PxRigidDynamic>()) {
+            pose = dyn->getGlobalPose();
+        } else if (PxRigidStatic* stat = actor->is<PxRigidStatic>()) {
+            pose = stat->getGlobalPose();
+        }
+        FVector newLocation = FromPxVec3(pose.p);
+        FQuat newRotation = FromPxQuat(pose.q);
+        
+        FBodyInstance* BodyInst = (FBodyInstance*)actor->userData;
+        
+        // StaticMeshComponent
+        if (UStaticMeshComponent* staticComp = Cast<UStaticMeshComponent>(BodyInst->OwnerComponent)) {
+            staticComp->SetWorldLocation(newLocation);
+            staticComp->SetWorldRotation(newRotation);
+        }
+        // SkeletalMeshComponent - 본 단위
+        else if (USkeletalMeshComponent* skelComp = Cast<USkeletalMeshComponent>(BodyInst->OwnerComponent)) {
+            int* Index = skelComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(BodyInst->BoneName.ToString());
+            int ParentIndex = skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].ParentIndex;
+            if (ParentIndex != INDEX_NONE)
+            {
+                skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = FMatrix::CreateTranslationMatrix(newLocation) * FMatrix::CreateRotationMatrix(newRotation.Rotator().Roll, newRotation.Rotator().Pitch, newRotation.Rotator().Yaw) * skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].GlobalTransform.Inverse();
+            }
+            else
+            {
+                skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = FMatrix::CreateTranslationMatrix(newLocation) * FMatrix::CreateRotationMatrix(newRotation.Rotator().Roll, newRotation.Rotator().Pitch, newRotation.Rotator().Yaw);
+            }
+            skelComp->GetSkeletalMesh()->UpdateBoneHierarchy();
+        }
+    }
+    
     for (auto& obj : gObjects) obj.UpdateFromPhysics();
 }
 

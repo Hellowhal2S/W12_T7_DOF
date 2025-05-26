@@ -68,3 +68,8 @@ void UStaticMesh::SetData(OBJ::FStaticMeshRenderData* renderData)
         materials.Add(newMaterialSlot);
     }
 }
+
+void UStaticMesh::SetBodySetup(UBodySetup* InBodySetup)
+{
+    BodySetup = InBodySetup;
+}

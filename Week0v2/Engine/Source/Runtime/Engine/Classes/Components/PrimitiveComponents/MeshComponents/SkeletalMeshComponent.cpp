@@ -147,8 +147,8 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* value)
     AABB = SkeletalMesh->GetRenderData().BoundingBox;
 
     // CreateBoneComponents();
-    CreateRagdollBones();
-    CreateRagdoll(PxVec3(0, 0, 100));
+    // CreateRagdollBones();
+    // CreateRagdoll(PxVec3(0, 0, 100));
 }
 
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
@@ -266,13 +266,13 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
         }
         
         // 3. 바디 인스턴스 생성
-        FBodyInstance* Instance = new FBodyInstance(this, EBodyType::Dynamic, ToPxVec3(GlobalPose));
+        FBodyInstance* Instance = new FBodyInstance(this, EBodyType::Dynamic, ToPxVec3(GlobalPose), BodySetup->BoneName);
         for (PxShape* shape : shapes)
         {
             Instance->AttachShape(*shape);
         }
+        Instance->RigidActorHandle->userData = (void*)Instance;
         GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
-        
         // 4. 결과 벡터에 추가
         Bodies.Add(Instance);
     }
