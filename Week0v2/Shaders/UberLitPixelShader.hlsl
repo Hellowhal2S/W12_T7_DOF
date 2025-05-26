@@ -623,8 +623,12 @@ PS_OUTPUT mainPS(PS_INPUT input)
     output.UUID = UUID;
     float2 uvAdjusted = input.texcoord;
 
-    // 기본 색상 추출  
-    float4 baseColor = Texture.Sample(linearSampler, uvAdjusted) * float4(DiffuseColor, 1.0);  
+    // 기본 색상 추출
+    float4 texColor = Texture.Sample(linearSampler, uvAdjusted);
+    float isZero = step(texColor.r + texColor.g + texColor.b + texColor.a, 0.0);
+    float4 finalTex = lerp(texColor, float4(1,1,1,1), isZero);
+    float4 baseColor = finalTex * float4(DiffuseColor, 1.0);
+    //float4 baseColor = Texture.Sample(linearSampler, uvAdjusted) * float4(DiffuseColor, 1.0);  
 
     if (!IsLit && !IsNormal)
     {
