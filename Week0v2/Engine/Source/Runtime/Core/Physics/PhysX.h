@@ -93,6 +93,7 @@ struct RagdollBone
     FString name;
     PxVec3 offset;                // 부모로부터의 위치
     PxVec3 halfSize;              // Capsule or box 크기
+    FVector direction; // 본 방향 단위 벡터
     int parentIndex;              // -1이면 루트
     PxRigidDynamic* body = nullptr;
     PxJoint* joint = nullptr;
