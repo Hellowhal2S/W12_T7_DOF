@@ -56,6 +56,16 @@ inline PxQuat ToPxQuat(const FQuat& q)
 {
 	return PxQuat(q.X, q.Y, q.Z, q.W);
 }
+
+inline FVector FromPxVec3(const PxVec3& v)
+{
+	return FVector(v.x, v.y, v.z);
+}
+
+inline FQuat FromPxQuat(const PxQuat& q)
+{
+	return FQuat(q.w, q.x, q.y, q.z);
+}
 	
 class PxTransform
 {

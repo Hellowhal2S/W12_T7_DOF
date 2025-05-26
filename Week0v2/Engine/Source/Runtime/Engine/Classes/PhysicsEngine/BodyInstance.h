@@ -4,6 +4,7 @@
 
 #include "BodyInstanceCore.h"
 #include "Container/Array.h"
+#include "UObject/NameTypes.h"
 
 enum class EBodyType { Dynamic, Static };
 using namespace physx;
@@ -18,9 +19,10 @@ struct FBodyInstance : public FBodyInstanceCore
     TArray<PxShape*> ShapeHandle;
     
     UPrimitiveComponent* OwnerComponent;
+    FName BoneName;
 
     FBodyInstance() : OwnerComponent(nullptr) {}
-    FBodyInstance(UPrimitiveComponent* InOwnerComponent, EBodyType InBodyType, const PxVec3& InPos);
+    FBodyInstance(UPrimitiveComponent* InOwnerComponent, EBodyType InBodyType, const PxVec3& InPos, FName InBoneName);
     ~FBodyInstance()=default;
 
     //void* PxRigidActor->userData

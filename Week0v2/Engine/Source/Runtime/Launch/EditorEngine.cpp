@@ -76,7 +76,7 @@ void UEditorEngine::Tick(float DeltaTime)
     for (const auto& [key, WorldContext] : WorldContexts)
     {
         WorldContext->GetWorld()->Tick(WorldContext->LevelType, DeltaTime);
-        // Simulat
+        // Simulate
         WorldContext->GetWorld()->Simulate(1.0f / 60.0f);
     }
 
