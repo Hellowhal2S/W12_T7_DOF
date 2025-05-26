@@ -26,6 +26,7 @@
 #include "Light/ShadowMapAtlas.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "UnrealEd/EditorViewportClient.h"
+#include "UnrealEd/PrimitiveBatch.h"
 #include "UObject/FunctionRegistry.h"
 
 void FPhysicsSkeletonPanel::Initialize(float InWidth, float InHeight)
@@ -90,14 +91,18 @@ void FPhysicsSkeletonPanel::Render()
         else if (USkeletalMeshComponent* SkeletalMeshComponet = PickedActor->GetComponentByClass<USkeletalMeshComponent>())
         {
             RenderForSkeletalMesh(SkeletalMeshComponet);
+            SkeletalMesh = SkeletalMeshComponet->GetSkeletalMesh();
             PhysicsAsset = SkeletalMeshComponet->GetSkeletalMesh()->GetPhysicsAsset();
         }
     }
 
     RenderShapeProperty(PickedActor);
     ImGui::End();
+
+    UPrimitiveBatch& PrimitiveBatch = UPrimitiveBatch::GetInstance();
+    
     PhysicsDetailPanel.Render(SelectedBodySetup);
- 
+
     ImGui::PopStyleColor();
 }
 

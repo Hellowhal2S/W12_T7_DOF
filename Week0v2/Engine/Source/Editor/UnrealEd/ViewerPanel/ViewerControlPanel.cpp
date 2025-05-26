@@ -25,7 +25,6 @@ void ViewerControlPanel::Render()
     ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(0, 0, 0, 255)); 
     /* Panel Flags */
     ImGuiWindowFlags PanelFlags =ImGuiWindowFlags_NoTitleBar| ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar;
-    UE_LOG(LogLevel::Error, "ViewerControlPanel::Render() called");
     /* Render Start */
     if (ImGui::Begin("Control Panel", nullptr, PanelFlags))
     {
