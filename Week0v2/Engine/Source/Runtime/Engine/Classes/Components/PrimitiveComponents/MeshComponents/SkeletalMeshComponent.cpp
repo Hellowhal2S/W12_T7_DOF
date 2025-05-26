@@ -18,6 +18,9 @@
 #include "UObject/Casts.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/CustomAnimInstance/TestAnimInstance.h"
+#include "Engine/FEditorStateManager.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "PhysicsEngine/PhysicsAsset.h"
 #include "Physics/PhysX.h"
 
 USkeletalMeshComponent::USkeletalMeshComponent(const USkeletalMeshComponent& Other)
@@ -190,6 +193,89 @@ void USkeletalMeshComponent::UpdateBoneHierarchy()
     
     SkeletalMesh->UpdateBoneHierarchy();
     SkinningVertex();
+}
+
+void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
+{
+    Bodies.Empty();
+    for (const UBodySetup* BodySetup : GetSkeletalMesh()->GetPhysicsAsset()->BodySetup)
+    {
+        // 1. 본의 월드 트랜스폼 계산
+        int* Index = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(BodySetup->BoneName.ToString());
+        FVector GlobalPose = GetSkeletalMesh()->GetRenderData().Bones[*Index].GlobalTransform.GetTranslationVector();
+        
+        // 2. 콜라이더 생성
+        TArray<PxShape*> shapes;
+
+        // Sphere
+        for (const FKSphereElem& sphere : BodySetup->AggGeom.SphereElems)
+        {
+            PxShape* shape = gPhysics->createShape(PxSphereGeometry(sphere.Radius), *gMaterial);
+            // 콜라이더의 로컬 트랜스폼 적용(필요시)
+            shape->setLocalPose(PxTransform(ToPxVec3(sphere.Center)));
+            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+            shape->setSimulationFilterData(fd);
+            shapes.Add(shape);
+        }
+        // Box
+        for (const FKBoxElem& box : BodySetup->AggGeom.BoxElems)
+        {
+            PxShape* shape = gPhysics->createShape(PxBoxGeometry(box.X/2, box.Y/2, box.Z/2), *gMaterial);
+            shape->setLocalPose(PxTransform(ToPxVec3(box.Center), ToPxQuat(box.Rotation.ToQuaternion())));
+            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+            shape->setSimulationFilterData(fd);
+            shapes.Add(shape);
+        }
+        // Capsule
+        for (const FKSphylElem& capsule : BodySetup->AggGeom.SphylElems)
+        {
+            PxShape* shape = gPhysics->createShape(PxCapsuleGeometry(capsule.Radius, capsule.Length/2), *gMaterial);
+            shape->setLocalPose(PxTransform(ToPxVec3(capsule.Center), ToPxQuat(capsule.Rotation.ToQuaternion())));
+            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+            shape->setSimulationFilterData(fd);
+            shapes.Add(shape);
+        }
+        // Convex
+        for (const FKConvexElem& convex : BodySetup->AggGeom.ConvexElems)
+        {
+            PxConvexMeshDesc convexDesc;
+            convexDesc.points.count = convex.VertexData.Num();
+            convexDesc.points.stride = sizeof(PxVec3);
+            convexDesc.points.data = convex.VertexData.GetData();
+            convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+            
+            PxDefaultMemoryOutputStream buf;
+            
+            if (!gCooking->cookConvexMesh(convexDesc, buf))
+                continue;
+
+            PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+            PxConvexMesh* convexMesh = gPhysics->createConvexMesh(input);
+            
+            PxShape* shape = gPhysics->createShape(PxConvexMeshGeometry(convexMesh), *gMaterial);
+            
+            FVector center(0,0,0);
+            for (const FVector& v : convex.VertexData)
+                center += v;
+            center /= convex.VertexData.Num();
+
+            shape->setLocalPose(PxTransform(ToPxVec3(center)));
+            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+            shape->setSimulationFilterData(fd);
+            shapes.Add(shape);
+        }
+        
+        // 3. 바디 인스턴스 생성
+        FBodyInstance* Instance = new FBodyInstance(this, EBodyType::Dynamic, ToPxVec3(GlobalPose));
+        for (PxShape* shape : shapes)
+        {
+            Instance->AttachShape(*shape);
+        }
+        GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
+        
+        // 4. 결과 벡터에 추가
+        Bodies.Add(Instance);
+    }
 }
 
 void USkeletalMeshComponent::PlayAnimation(UAnimSequence* NewAnimToPlay, bool bLooping)
