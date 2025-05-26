@@ -16,14 +16,17 @@ void MySimulationEventCallback::onContact(const PxContactPairHeader& pairHeader,
     for (PxU32 i = 0; i < nbPairs; ++i)
     {
         const PxContactPair& cp = pairs[i];
+        // 접촉 시작!
         if(cp.events & PxPairFlag::eNOTIFY_TOUCH_FOUND) {
-            // 접촉 시작!
+            
         }
+        // 접촉 유지(매 프레임)
         if(cp.events & PxPairFlag::eNOTIFY_TOUCH_PERSISTS) {
-            // 접촉 유지(매 프레임)
+            
         }
+        // 접촉 해제!
         if(cp.events & PxPairFlag::eNOTIFY_TOUCH_LOST) {
-            // 접촉 해제!
+            
         }
     }
 }
