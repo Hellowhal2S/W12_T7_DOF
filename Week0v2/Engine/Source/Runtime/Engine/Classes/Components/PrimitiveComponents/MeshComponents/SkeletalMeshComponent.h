@@ -7,6 +7,7 @@ class UStaticMeshComponent;
 class UAnimationAsset;
 class UAnimSingleNodeInstance;
 class UAnimSequence;
+struct RagdollBone;
 
 enum class EAnimationMode : uint8
 {
@@ -111,6 +112,13 @@ private:
 
     /** Array of FConstraintInstance structs, storing per-instance state about each constraint. */
     TArray<struct FConstraintInstance*> Constraints;
+
+private:
+    TArray<RagdollBone*> RagdollBones;
+    void CreateRagdollBones();
+    void CreateRagdoll(const PxVec3& worldRoot);
+    
+
 private:
     TArray<UStaticMeshComponent*> BoneComponents;
     bool bCPUSkinned = true;

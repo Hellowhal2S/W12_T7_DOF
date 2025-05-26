@@ -58,7 +58,7 @@ void UWorld::InitPhysicsScene()
     sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
     sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
     sceneDesc.flags |= PxSceneFlag::eENABLE_PCM;;
-    sceneDesc.filterShader = FPhysX::MyFilterShader;
+    sceneDesc.filterShader = PxDefaultSimulationFilterShader;
     gMyCallback = new MySimulationEventCallback();
     sceneDesc.simulationEventCallback = gMyCallback;
     gScene = gPhysics->createScene(sceneDesc);
@@ -76,13 +76,13 @@ void UWorld::InitPhysicsScene()
     PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 0, 1, 0), *gMaterial);
     gScene->addActor(*GroundPlane);
         
-    FGameObject BoxObject = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
-    BoxObject.rigidBody->setAngularDamping(0.5f);
-    BoxObject.rigidBody->setLinearDamping(0.5f);
-    BoxObject.rigidBody->setMass(10.0f);
-    BoxObject.scene = gScene;
+    //FGameObject BoxObject = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
+    //BoxObject.rigidBody->setAngularDamping(0.5f);
+    //BoxObject.rigidBody->setLinearDamping(0.5f);
+    //BoxObject.rigidBody->setMass(10.0f);
+    //BoxObject.scene = gScene;
 
-    gObjects.push_back(BoxObject);
+    /*gObjects.push_back(BoxObject);*/
     
     printf("Init Physics Scene\n");
 }
