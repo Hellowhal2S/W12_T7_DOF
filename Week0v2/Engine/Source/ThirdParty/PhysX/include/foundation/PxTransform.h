@@ -35,6 +35,8 @@
 
 #include "foundation/PxQuat.h"
 #include "foundation/PxPlane.h"
+#include "Math/Quat.h"
+#include "Math/Vector.h"
 
 #if !PX_DOXYGEN
 namespace physx
@@ -45,6 +47,26 @@ namespace physx
 \brief class representing a rigid euclidean transform as a quaternion and a vector
 */
 
+inline PxVec3 ToPxVec3(const FVector& v)
+{
+	return PxVec3(v.X, v.Y, v.Z);
+}
+
+inline PxQuat ToPxQuat(const FQuat& q)
+{
+	return PxQuat(q.X, q.Y, q.Z, q.W);
+}
+
+inline FVector FromPxVec3(const PxVec3& v)
+{
+	return FVector(v.x, v.y, v.z);
+}
+
+inline FQuat FromPxQuat(const PxQuat& q)
+{
+	return FQuat(q.w, q.x, q.y, q.z);
+}
+	
 class PxTransform
 {
   public:

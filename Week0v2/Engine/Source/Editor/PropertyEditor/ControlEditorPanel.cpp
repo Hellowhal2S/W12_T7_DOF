@@ -403,7 +403,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
                         FManagerOBJ::CreateStaticMesh("Assets/Primitives/Cube.obj");
                         MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Cube.obj"));
-                        TempActor->AddComponent<UBoxShapeComponent>(EComponentOrigin::Editor);
+                        //TempActor->AddComponent<UBoxShapeComponent>(EComponentOrigin::Editor);
 
                         SpawnedActor = TempActor;
                         break;
@@ -415,7 +415,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
                         FManagerOBJ::CreateStaticMesh("Assets/Primitives/Sphere.obj");
                         MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Sphere.obj"));
-                        TempActor->AddComponent<USphereShapeComponent>(EComponentOrigin::Editor);
+                        //TempActor->AddComponent<USphereShapeComponent>(EComponentOrigin::Editor);
 
                         SpawnedActor = TempActor;
                         break;
@@ -427,7 +427,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
                         FManagerOBJ::CreateStaticMesh("Assets/Primitives/Capsule.obj");
                         MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Capsule.obj"));
-                        TempActor->AddComponent<UCapsuleShapeComponent>(EComponentOrigin::Editor);
+                        //TempActor->AddComponent<UCapsuleShapeComponent>(EComponentOrigin::Editor);
 
                         SpawnedActor = TempActor;
                         break;
@@ -456,8 +456,12 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                     {
                         SpawnedActor = World->SpawnActor<ASkeletalMeshActor>();
                         Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->SetData("Contents/FBX/Rumba_Dancing.fbx");
-
+                        if (Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->GetSkeletalMesh()->GetPhysicsAsset())
+                        {
+                            Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->InstantiatePhysicsAssetBodies_Internal();
+                        }
                         SpawnedActor->SetActorLabel("SkeletalMesh");
+                            
                         break;
                     }
                     case OBJ_CHARACTER:

@@ -6,6 +6,11 @@
 #include "UnrealEd/PrimitiveBatch.h"
 #include "Classes/Engine/FLoaderOBJ.h"
 #include "Components/Mesh/StaticMesh.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "PhysicsEngine/BoxElem.h"
+#include "PhysicsEngine/ConvexElem.h"
+#include "PhysicsEngine/SphereElem.h"
+#include "PhysicsEngine/SphylElem.h"
 
 UStaticMeshComponent::UStaticMeshComponent(const UStaticMeshComponent& Other)
     : UMeshComponent(Other)
@@ -126,6 +131,80 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* value)
     OverrideMaterials.SetNum(value->GetMaterials().Num());
     AABB = FBoundingBox(staticMesh->GetRenderData()->BoundingBoxMin, staticMesh->GetRenderData()->BoundingBoxMax);
     VBIBTopologyMappingName = staticMesh->GetRenderData()->DisplayName;
+
+    if (GetWorld() == nullptr) return;
+    
+    UBodySetup* BodySetup = GetStaticMesh()->GetBodySetup();
+    
+    // 2. 콜라이더 생성
+    TArray<PxShape*> shapes;
+    // Sphere
+    for (const FKSphereElem& sphere : BodySetup->AggGeom.SphereElems)
+    {
+        PxShape* shape = gPhysics->createShape(PxSphereGeometry(sphere.Radius), *gMaterial);
+        // 콜라이더의 로컬 트랜스폼 적용(필요시)
+        shape->setLocalPose(PxTransform(ToPxVec3(sphere.Center)));
+        PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+        shape->setSimulationFilterData(fd);
+        shapes.Add(shape);
+    }
+    // Box
+    for (const FKBoxElem& box : BodySetup->AggGeom.BoxElems)
+    {
+        PxShape* shape = gPhysics->createShape(PxBoxGeometry(box.X/2, box.Y/2, box.Z/2), *gMaterial);
+        shape->setLocalPose(PxTransform(ToPxVec3(box.Center), ToPxQuat(box.Rotation.ToQuaternion())));
+        PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+        shape->setSimulationFilterData(fd);
+        shapes.Add(shape);
+    }
+    // Capsule
+    for (const FKSphylElem& capsule : BodySetup->AggGeom.SphylElems)
+    {
+        PxShape* shape = gPhysics->createShape(PxCapsuleGeometry(capsule.Radius, capsule.Length/2), *gMaterial);
+        shape->setLocalPose(PxTransform(ToPxVec3(capsule.Center), ToPxQuat(capsule.Rotation.ToQuaternion())));
+        PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+        shape->setSimulationFilterData(fd);
+        shapes.Add(shape);
+    }
+    // Convex
+    for (const FKConvexElem& convex : BodySetup->AggGeom.ConvexElems)
+    {
+        PxConvexMeshDesc convexDesc;
+        convexDesc.points.count = convex.VertexData.Num();
+        convexDesc.points.stride = sizeof(PxVec3);
+        convexDesc.points.data = convex.VertexData.GetData();
+        convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+        
+        PxDefaultMemoryOutputStream buf;
+        
+        if (!gCooking->cookConvexMesh(convexDesc, buf))
+            continue;
+
+        PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+        PxConvexMesh* convexMesh = gPhysics->createConvexMesh(input);
+        
+        PxShape* shape = gPhysics->createShape(PxConvexMeshGeometry(convexMesh), *gMaterial);
+        
+        FVector center(0,0,0);
+        for (const FVector& v : convex.VertexData)
+            center += v;
+        center /= convex.VertexData.Num();
+
+        shape->setLocalPose(PxTransform(ToPxVec3(center)));
+        PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+        shape->setSimulationFilterData(fd);
+        shapes.Add(shape);
+    }
+    
+    FBodyInstance* Instance = new FBodyInstance(this, EBodyType::Dynamic, ToPxVec3(GetRelativeLocation()), FName());
+    for (PxShape* shape : shapes)
+    {
+        Instance->AttachShape(*shape);
+    }
+    Instance->RigidActorHandle->userData = (void*)Instance;
+    GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
+
+    BodyInstance = *Instance;
 }
 
 std::unique_ptr<FActorComponentInfo> UStaticMeshComponent::GetComponentInfo()

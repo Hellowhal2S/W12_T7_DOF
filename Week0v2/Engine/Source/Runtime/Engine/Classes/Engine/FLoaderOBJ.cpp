@@ -4,6 +4,7 @@
 #include "UObject/ObjectFactory.h"
 #include "Components/Material/Material.h"
 #include "Components/Mesh/StaticMesh.h"
+#include "PhysicsEngine/BodySetup.h"
 
 bool FLoaderOBJ::ParseOBJ(const FString& ObjFilePath, FObjInfo& OutObjInfo)
 {
@@ -728,7 +729,44 @@ UStaticMesh* FManagerOBJ::CreateStaticMesh(const FString& filePath)
 
     staticMesh = FObjectFactory::ConstructObject<UStaticMesh>(nullptr);
     staticMesh->SetData(staticMeshRenderData);
+    
+    UBodySetup* BodySetup = FObjectFactory::ConstructObject<UBodySetup>(nullptr);
 
+    if (staticMeshRenderData->ObjectName == L"Cube.Obj")
+    {
+        FKBoxElem NewBox;
+        NewBox.X = 0.5f;                      // 기본 박스 절반 크기 X
+        NewBox.Y = 0.5f;                      // 기본 박스 절반 크기 Y
+        NewBox.Z = 0.5f;                      // 기본 박스 절반 크기 Z
+        NewBox.Center = FVector::ZeroVector;   // 로컬 오프셋
+        BodySetup->AggGeom.BoxElems.Add(NewBox);
+    }
+    else if (staticMeshRenderData->ObjectName == L"Sphere.Obj")
+    {
+        FKSphereElem NewSphere;
+        NewSphere.Radius = 0.5f;                // 기본값: 반경 10
+        NewSphere.Center = FVector::ZeroVector;  // 본 로컬 오프셋
+        BodySetup->AggGeom.SphereElems.Add(NewSphere);
+    }
+    else if (staticMeshRenderData->ObjectName == L"Capsule.Obj")
+    {
+        FKSphylElem NewCapsule;
+        NewCapsule.Radius     = 0.5f;           // 캡슐 반지름
+        NewCapsule.Length     = 0.5f;          // 캡슐 길이 (전체 길이에서 반지름 제외한 축 방향 절반길이)
+        NewCapsule.Center     = FVector::ZeroVector;
+        BodySetup->AggGeom.SphylElems.Add(NewCapsule);
+    }
+    else
+    {
+        FKConvexElem NewConvex;
+        for (FVertexSimple& vertex : staticMeshRenderData->Vertices)
+        {
+            FVector vector = FVector(vertex.x, vertex.y, vertex.z);
+            NewConvex.VertexData.Add(vector);
+        }
+        BodySetup->AggGeom.ConvexElems.Add(NewConvex);
+    }
+    staticMesh->SetBodySetup(BodySetup);
     staticMeshMap.Add(staticMeshRenderData->ObjectName, staticMesh);
 
     return staticMesh;

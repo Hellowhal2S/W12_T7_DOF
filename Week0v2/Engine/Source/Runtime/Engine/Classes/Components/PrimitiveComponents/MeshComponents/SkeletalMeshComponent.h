@@ -2,6 +2,7 @@
 #include "MeshComponent.h"
 #include "Components/Mesh/SkeletalMesh.h"
 
+class FTransform;
 class UAnimInstance;
 class UStaticMeshComponent;
 class UAnimationAsset;
@@ -50,6 +51,8 @@ public:
     UAnimSingleNodeInstance* GetSingleNodeInstance() const;
     void CreateBoneComponents();
     void UpdateBoneHierarchy();
+    
+    void InstantiatePhysicsAssetBodies_Internal();
 
     UPROPERTY(int, SelectedSubMeshIndex);
 
