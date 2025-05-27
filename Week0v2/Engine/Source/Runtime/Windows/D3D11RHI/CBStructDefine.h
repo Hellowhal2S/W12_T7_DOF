@@ -226,6 +226,17 @@ struct alignas(16) FBoneConstant
     FMatrix BoneSkinningMatrices[128];
 };
 
+struct alignas(16) FDoFConstants
+{
+    float FocusDepth;
+    float FocusRange;
+    float MaxCoc;
+    float Padding0;
+
+    FVector2D InvScreenSize;
+    FVector2D Padding1;
+};
+
 enum class EShaderConstantBuffer : std::uint8_t
 {
     FCameraConstant = 0,
@@ -241,6 +252,7 @@ enum class EShaderConstantBuffer : std::uint8_t
     FPrimitiveCounts = 10,
     FSubUVConstant = 11,
     FViewportInfo = 12,
+    FDoFConstants = 13,
     
     EShaderConstantBuffer_MAX
 };
@@ -262,6 +274,7 @@ inline const TCHAR* EShaderConstantBufferToString(EShaderConstantBuffer e)
     case EShaderConstantBuffer::FPrimitiveCounts: return TEXT("FPrimitiveCounts");
     case EShaderConstantBuffer::FSubUVConstant: return TEXT("FSubUVConstant");
     case EShaderConstantBuffer::FViewportInfo: return TEXT("FViewportInfo");
+    case EShaderConstantBuffer::FDoFConstants: return TEXT("FDoFConstants");
     default: return TEXT("unknown");
     }
 }
@@ -296,6 +309,7 @@ inline EShaderConstantBuffer EShaderConstantBufferFromString(const TCHAR* str)
     if(std::strcmp(str, "FPrimitiveCounts") == 0) return EShaderConstantBuffer::FPrimitiveCounts;
     if(std::strcmp(str, "FSubUVConstant") == 0) return EShaderConstantBuffer::FSubUVConstant;
     if(std::strcmp(str, "FViewportInfo") == 0) return EShaderConstantBuffer::FViewportInfo;
+    if(std::strcmp(str, "FDoFConstants") == 0) return EShaderConstantBuffer::FDoFConstants;
 #endif
     return EShaderConstantBuffer::EShaderConstantBuffer_MAX;
 }
