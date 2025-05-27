@@ -22,6 +22,7 @@ VS_OUTPUT mainVS(uint VertexID : SV_VertexID)
 
     // NDC 를 UV [0,1] 로 매핑
     OUT.uv = pos[VertexID] * 0.5 + 0.5;
-
+    // D3D에서는 Y 축을 뒤집어 주어야 정방향
+    OUT.uv.y = 1.0 - OUT.uv.y;
     return OUT;
 }

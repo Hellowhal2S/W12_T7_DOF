@@ -48,10 +48,11 @@ void FDepthOfFieldRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewpor
         
         ID3D11SamplerState* Sampler = Renderer.GetSamplerState(ESamplerType::Linear);
         Graphics.DeviceContext->PSSetSamplers(0, 1, &Sampler);
-
+        Graphics.DeviceContext->PSSetSamplers(1, 1, &Sampler);
+        
         const auto PreviousSRV = Graphics.GetPreviousShaderResourceView();
-        Graphics.DeviceContext->PSSetShaderResources(1, 1, &Graphics.GetCurrentWindowData()->DepthCopySRV);
         Graphics.DeviceContext->PSSetShaderResources(0, 1, &PreviousSRV);
+        Graphics.DeviceContext->PSSetShaderResources(1, 1, &Graphics.GetCurrentWindowData()->DepthCopySRV);
     }
 }
 
@@ -66,7 +67,7 @@ void FDepthOfFieldRenderPass::Execute(std::shared_ptr<FViewportClient> InViewpor
     Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     // 2) 셰이더는 Prepare() 단계에서 이미 바인딩됨(VS, PS, CB, SRV, Sampler)
-
+    UpdateDoFConstant(InViewportClient);
     // 3) 풀스크린 삼각형 드로우: 3개의 정점으로 화면 전체 커버
     Graphics.DeviceContext->Draw(3, 0);
 
