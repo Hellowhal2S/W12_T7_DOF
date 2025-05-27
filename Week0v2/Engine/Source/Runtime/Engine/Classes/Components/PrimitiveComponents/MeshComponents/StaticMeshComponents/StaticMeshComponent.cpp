@@ -201,6 +201,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* value)
     {
         Instance->AttachShape(*shape);
     }
+    PxRigidBodyExt::updateMassAndInertia(*Instance->RigidDynamicHandle, 1.0f);
     Instance->RigidActorHandle->userData = (void*)Instance;
     GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
 
@@ -231,6 +232,12 @@ void UStaticMeshComponent::LoadAndConstruct(const FActorComponentInfo& Info)
     SetStaticMesh(Mesh);
 
 }
+
+void UStaticMeshComponent::ReleaseBody()
+{
+    BodyInstance.Release();
+}
+
 UObject* UStaticMeshComponent::Duplicate(UObject* InOuter)
 {
     UStaticMeshComponent* NewComp = FObjectFactory::ConstructObjectFrom<UStaticMeshComponent>(this, InOuter);

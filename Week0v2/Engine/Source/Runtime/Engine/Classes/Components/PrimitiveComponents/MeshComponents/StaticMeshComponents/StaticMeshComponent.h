@@ -58,6 +58,8 @@ public:
     virtual void SaveComponentInfo(FActorComponentInfo& OutInfo) override;
     virtual void LoadAndConstruct(const FActorComponentInfo& Info) override;
 
+    void ReleaseBody();
+
     UPROPERTY(int, selectedSubMeshIndex);
 protected:
     UStaticMesh* staticMesh = nullptr;

@@ -196,7 +196,10 @@ public:
     //
     void Release()
     {
-        RigidActorHandle->release();
+        if (RigidActorHandle)
+        {
+            RigidActorHandle->release();
+        }
     }
 
     PxTransform GetGlobalPose() const

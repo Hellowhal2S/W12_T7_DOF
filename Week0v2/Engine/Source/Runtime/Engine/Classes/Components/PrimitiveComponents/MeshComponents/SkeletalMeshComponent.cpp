@@ -271,11 +271,21 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
         {
             Instance->AttachShape(*shape);
         }
+        PxRigidBodyExt::updateMassAndInertia(*Instance->RigidDynamicHandle, 1.0f);
         Instance->RigidActorHandle->userData = (void*)Instance;
         GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
         // 4. 결과 벡터에 추가
         Bodies.Add(Instance);
     }
+}
+
+void USkeletalMeshComponent::ReleaseBodies()
+{
+    for (FBodyInstance* Body : Bodies)
+    {
+        Body->Release();
+    }
+    Bodies.Empty();
 }
 
 void USkeletalMeshComponent::PlayAnimation(UAnimSequence* NewAnimToPlay, bool bLooping)

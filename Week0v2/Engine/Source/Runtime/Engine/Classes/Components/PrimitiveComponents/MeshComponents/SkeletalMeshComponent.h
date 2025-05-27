@@ -52,7 +52,9 @@ public:
     void CreateBoneComponents();
     void UpdateBoneHierarchy();
     
+    //BodyInstance
     void InstantiatePhysicsAssetBodies_Internal();
+    void ReleaseBodies();
 
     UPROPERTY(int, SelectedSubMeshIndex);
 

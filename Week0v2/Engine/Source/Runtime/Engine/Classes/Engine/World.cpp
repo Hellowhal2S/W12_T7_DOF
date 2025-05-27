@@ -54,7 +54,7 @@ void UWorld::InitWorld()
 void UWorld::InitPhysicsScene()
 {
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
-    sceneDesc.gravity = PxVec3(0, 0, -981.f);
+    sceneDesc.gravity = PxVec3(0, 0, -9.81f);
     gDispatcher = PxDefaultCpuDispatcherCreate(4);
     sceneDesc.cpuDispatcher = gDispatcher;
     sceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
@@ -112,14 +112,14 @@ void UWorld::Simulate(float dt) {
     gScene->simulate(dt);
     gScene->fetchResults(true);
     
-    // 예시: 모든 동적(Dynamic) 및 정적(Static) 바디 가져오기
+    // // 예시: 모든 동적(Dynamic) 및 정적(Static) 바디 가져오기
     PxU32 bufferSize = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
     std::vector<PxActor*> actorBuffer(bufferSize);
     gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actorBuffer.data(), bufferSize);
     for (PxU32 i = 0; i < bufferSize; ++i) {
         PxActor* actor = actorBuffer[i];
         if (!actor->userData) continue;
-
+    
         // actor를 사용 (예: userData로 엔진 오브젝트 찾기, pose 읽기 등)
         PxTransform pose;
         if (PxRigidDynamic* dyn = actor->is<PxRigidDynamic>()) {
@@ -152,8 +152,6 @@ void UWorld::Simulate(float dt) {
             skelComp->GetSkeletalMesh()->UpdateBoneHierarchy();
         }
     }
-    
-    for (auto& obj : gObjects) obj.UpdateFromPhysics();
 }
 
 void UWorld::LoadLevel(const FString& LevelName)
@@ -361,6 +359,14 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     for (UActorComponent* Component : Components)
     {
         Component->DestroyComponent();
+        if (Component->IsA<USkeletalMeshComponent>())
+        {
+            Cast<USkeletalMeshComponent>(Component)->ReleaseBodies();
+        }
+        else if (Component->IsA<UStaticMeshComponent>())
+        {
+            Cast<UStaticMeshComponent>(Component)->ReleaseBody();
+        }
     }
 
     // World에서 제거
