@@ -731,7 +731,7 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
             FMatrix ChildWorldMatrix = ChildBone.GlobalTransform;
             FVector localCenter = ChildWorldMatrix.Inverse().TransformPosition((parentPos + childPos) * 0.5f);
             FVector dir = offset.GetSafeNormal();
-            FQuat localRotation = FQuat(1,0,0,0); // 언리얼식 Z축 기준
+            FQuat localRotation = FQuat::FindBetweenNormals(FVector(0, 0, 1), dir); // 언리얼식 Z축 기준
 
             // 3. FKSphylElem 생성
             FKSphylElem capsule;
