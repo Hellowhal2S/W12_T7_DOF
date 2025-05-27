@@ -472,11 +472,6 @@ void USkeletalMeshComponent::SetLoopEndFrame(int32 InLoopEndFrame)
     }
 }
 
-void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
-{
-    AnimationMode = InAnimationMode;
-}
-
 void USkeletalMeshComponent::CreateRagdollBones()
 {
     const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
@@ -487,39 +482,26 @@ void USkeletalMeshComponent::CreateRagdollBones()
     for (int i = 0; i < Bones.Num(); ++i)
     {
         const FBone& Bone = Bones[i];
-
         RagdollBone* ragBone = new RagdollBone();
         ragBone->name = Bone.BoneName;
         ragBone->parentIndex = Bone.ParentIndex;
 
-        const FVector& thisPos = Bone.GlobalTransform.GetTranslationVector();
-        FVector parentPos = (Bone.ParentIndex >= 0)
-            ? Bones[Bone.ParentIndex].GlobalTransform.GetTranslationVector()
-            : thisPos;
-
-        FVector offset = (thisPos - parentPos);
-        float length = offset.Magnitude();
-
-        // 루트 본은 반드시 포함시키되 기본 방향/크기로 설정
         if (Bone.ParentIndex < 0)
         {
             ragBone->offset = PxVec3(0, 0, 0);
-            ragBone->direction = FVector(0, 0, 1);
-
-            float radius = 1.0f;
-            float halfHeight = 1.0f;
-            ragBone->halfSize = PxVec3(radius, radius, halfHeight);
+            ragBone->halfSize = PxVec3(0.0, 0.0, 0.0);
         }
- 
         else
         {
-            FVector dir = offset.GetSafeNormal();
-            float radius = FMath::Clamp(length * 0.2f, 0.0f, 5.0f);
-            float halfHeight = FMath::Max(length * 0.5f - radius, 0.5f);
+            FVector parentPos = Bones[Bone.ParentIndex].GlobalTransform.GetTranslationVector();
+            FVector childPos = Bone.GlobalTransform.GetTranslationVector();
+            FVector offset = childPos - parentPos;
 
+            float length = offset.Magnitude();
+            float radius = FMath::Clamp(length * 0.1f, 0.5f, 3.0f);
+            float halfHeight = FMath::Max(length * 0.5f - radius, 0.1f);
 
             ragBone->offset = PxVec3(offset.X, offset.Y, offset.Z);
-            ragBone->direction = dir;
             ragBone->halfSize = PxVec3(radius, radius, halfHeight);
         }
 
@@ -527,65 +509,71 @@ void USkeletalMeshComponent::CreateRagdollBones()
     }
 }
 
-
 void USkeletalMeshComponent::CreateRagdoll(const PxVec3& worldRoot)
 {
-    for (int i = 0; i < RagdollBones.Num(); ++i)
+    const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
+
+    for (int childIndex = 0; childIndex < Bones.Num(); ++childIndex)
     {
-        RagdollBone& bone = *RagdollBones[i];
+        const FBone& childBone = Bones[childIndex];
+        int parentIndex = childBone.ParentIndex;
+        RagdollBone& bone = *RagdollBones[childIndex];
 
-        PxVec3 parentPos = (bone.parentIndex >= 0)
-            ? RagdollBones[bone.parentIndex]->body->getGlobalPose().p
-            : worldRoot;
-        PxVec3 bonePos = parentPos + (bone.offset);
+        if (parentIndex < 0)
+        {
+            PxRigidDynamic* DummyBody = gPhysics->createRigidDynamic(PxTransform(worldRoot));
+            bone.body = DummyBody;
+            GetWorld()->GetPhysicsScene()->addActor(*DummyBody);
+            continue;
+        }
 
-        // 본 방향 벡터
-        FVector dir(bone.direction.X, bone.direction.Y, bone.direction.Z);
+        FVector parentPos = Bones[parentIndex].GlobalTransform.GetTranslationVector();
+        FVector childPos = childBone.GlobalTransform.GetTranslationVector();
+        FVector mid = (parentPos + childPos) * 0.5f;
+        FVector dir = (childPos - parentPos).GetSafeNormal();
 
-        // 회전: 캡슐의 Y축을 본 방향으로 정렬
-        FQuat rotationQuat = FQuat::FindBetweenNormals(FVector(1, 0, 0), dir);
-        rotationQuat.Normalize();
+        FQuat rot = FQuat::FindBetweenNormals(FVector(1, 0, 0), dir);
+        PxQuat pxRot(rot.X, rot.Y, rot.Z, rot.W);
 
-        PxQuat pxRotation(rotationQuat.X, rotationQuat.Y, rotationQuat.Z, rotationQuat.W);
-        PxTransform pose(bonePos, pxRotation);
-
-        // 캡슐 생성
         float radius = bone.halfSize.x;
         float halfHeight = bone.halfSize.z;
-        PxCapsuleGeometry capsule(radius, halfHeight);
+        PxTransform capsulePose(PxVec3(mid.X, mid.Y, mid.Z), pxRot);
 
+        PxCapsuleGeometry capsule(radius, halfHeight);
         PxShape* shape = gPhysics->createShape(capsule, *gMaterial);
-        PxRigidDynamic* body = gPhysics->createRigidDynamic(pose);
+        PxRigidDynamic* body = gPhysics->createRigidDynamic(capsulePose);
         body->attachShape(*shape);
 
-        // 질량 = 전체 길이에 비례
-        float mass = (halfHeight * 2.0f + radius * 2.0f) * 0.1f;
-        PxRigidBodyExt::updateMassAndInertia(*body, mass);
+        PxRigidBodyExt::updateMassAndInertia(*body, 1.0f);
 
         GetWorld()->GetPhysicsScene()->addActor(*body);
         bone.body = body;
+    }
 
-        // 조인트 설정
-        if (bone.parentIndex >= 0)
-        {
-            RagdollBone& parent = *RagdollBones[bone.parentIndex];
+    for (int childIndex = 0; childIndex < Bones.Num(); ++childIndex)
+    {
+        int parentIndex = Bones[childIndex].ParentIndex;
+        if (parentIndex < 0) continue;
 
-            PxTransform parentPose = parent.body->getGlobalPose();
-            PxTransform childPose = bone.body->getGlobalPose();
+        RagdollBone& child = *RagdollBones[childIndex];
+        RagdollBone& parent = *RagdollBones[parentIndex];
 
-            PxTransform localFrameParent = parentPose.getInverse() * childPose;
-            PxTransform localFrameChild = PxTransform(PxIdentity); // 자식 기준에선 로컬 원점
+        if (child.body == nullptr || parent.body == nullptr)
+            continue;
 
+        PxVec3 anchorPos = (child.body->getGlobalPose().p + parent.body->getGlobalPose().p) * 0.5f;
 
-            PxD6Joint* joint = PxD6JointCreate(*gPhysics, parent.body, localFrameParent, bone.body, localFrameChild);
-            joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
-            joint->setMotion(PxD6Axis::eSWING1, PxD6Motion::eLIMITED);
-            joint->setMotion(PxD6Axis::eSWING2, PxD6Motion::eLIMITED);
-            joint->setTwistLimit(PxJointAngularLimitPair(-PxPi / 4, PxPi / 4));
-            joint->setSwingLimit(PxJointLimitCone(PxPi / 6, PxPi / 6));
+        PxTransform localParent = parent.body->getGlobalPose().getInverse() * PxTransform(anchorPos);
+        PxTransform localChild = child.body->getGlobalPose().getInverse() * PxTransform(anchorPos);
 
-            bone.joint = joint;
-        }
+        PxD6Joint* joint = PxD6JointCreate(*gPhysics, parent.body, localParent, child.body, localChild);
+        joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
+        joint->setMotion(PxD6Axis::eSWING1, PxD6Motion::eLIMITED);
+        joint->setMotion(PxD6Axis::eSWING2, PxD6Motion::eLIMITED);
+        joint->setTwistLimit(PxJointAngularLimitPair(-PxPi / 4, PxPi / 4));
+        joint->setSwingLimit(PxJointLimitCone(PxPi / 6, PxPi / 6));
+
+        child.joint = joint;
     }
 }
 
