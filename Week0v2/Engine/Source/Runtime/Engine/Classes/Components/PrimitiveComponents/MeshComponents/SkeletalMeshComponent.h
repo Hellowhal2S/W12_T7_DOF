@@ -122,7 +122,7 @@ private:
     TArray<RagdollBone*> RagdollBones;
     void CreateRagdollBones();
     void CreateRagdoll(const PxVec3& worldRoot);
-    
+    void CreateRagedollBodySetUp();
 
 private:
     TArray<UStaticMeshComponent*> BoneComponents;
