@@ -1,0 +1,24 @@
+# Blender 4.3.2 MTL File: 'None'
+# www.blender.org
+
+newmtl Body.003
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd textures/Body_Base_Color.png
+map_Ns textures/Body_Roughness.png
+map_refl textures/Body_Metallic.png
+
+newmtl Glass.003
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 1
+map_Kd textures/Glass_Base_Color.png
+map_Ns textures/Glass_Roughness.png
+map_refl textures/Glass_Metallic.png
+map_d textures/Glass_Opacity.png

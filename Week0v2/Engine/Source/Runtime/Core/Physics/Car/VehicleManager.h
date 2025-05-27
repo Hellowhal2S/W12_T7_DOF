@@ -88,10 +88,4 @@ private:
 
     bool SetupSuspensionRaycast();
     void ReleaseSuspensionRaycast();
-
-    PxVehicleDrive4W* CreateVehicleObject(
-        const PxVehicleChassisData& chassisData,
-        PxVehicleWheelsSimData* wheelsData,
-        PxVehicleDriveSimData4W* driveData,
-        const PxTransform& chassisLocalPose);
 };

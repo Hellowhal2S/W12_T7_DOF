@@ -80,9 +80,6 @@ void UWorld::InitPhysicsScene()
     GroundPlane->getShapes(&planeShape, 1);
     planeShape->setSimulationFilterData(FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All));
     PxFilterData QryFilterData;
-    // QryFilterData.word0 = ...; // 다른 필터링 정보 (옵션)
-    // QryFilterData.word1 = ...; // 다른 필터링 정보 (옵션)
-    // QryFilterData.word2 = ...; // 다른 필터링 정보 (옵션)
     QryFilterData.word3 = 0; // FPhysX::InitVehicleSDK에서 설정한 기본 지면 타입 ID (0)
     planeShape->setQueryFilterData(QryFilterData);
     GroundPlane->setName("GroundPlane");
@@ -193,7 +190,7 @@ void UWorld::Simulate(float dt)
         // float steer = GetInputAxisValue("MoveRight");
         // bool handbrake = IsInputActionPressed("Handbrake");
         // VehicleManager->UpdatePlayerVehicleInput(accel, brake, steer, handbrake);
-        VehicleManager->UpdateAllVehicles(dt);
+        //VehicleManager->UpdateAllVehicles(dt);
     }
 }
 

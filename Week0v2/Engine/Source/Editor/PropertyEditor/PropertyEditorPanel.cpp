@@ -239,7 +239,18 @@ void PropertyEditorPanel::Render()
                     }
                     PickedComponent = CubeComponent;
                 }
-
+                if (ImGui::Selectable("SphereComponent"))
+                {
+                    UStaticMeshComponent* StaticMeshComponent = PickedActor->AddComponent<UStaticMeshComponent>(EComponentOrigin::Editor);
+                    if (USceneComponent* ParentComponent = Cast<USceneComponent>(PickedComponent))
+                    {
+                        StaticMeshComponent->DetachFromParent();
+                        StaticMeshComponent->SetupAttachment(ParentComponent);
+                    }
+                    PickedComponent = StaticMeshComponent;
+                    FManagerOBJ::CreateStaticMesh("Assets/Sphere.obj");
+                    StaticMeshComponent->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Sphere.obj"));
+                }
                 if (ImGui::Selectable("ProjectileMovementComponent"))
                 {
                     UProjectileMovementComponent* ProjectileComp = PickedActor->AddComponent<UProjectileMovementComponent>(EComponentOrigin::Editor);
@@ -271,7 +282,6 @@ void PropertyEditorPanel::Render()
                     BillboardComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 3.0f));
                     BillboardComponent->bOnlyForEditor = false;
                 }
-
                 ImGui::EndPopup();
             }
             ImGui::TreePop();

@@ -149,7 +149,7 @@ xcopy /y /d "$(ProjectDir)Engine\Source\ThirdParty\FBX_SDK\2020.3.7\lib\x64\$(Co
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)Engine\Source\ThirdParty\FBX_SDK\2020.3.7\lib\x64\debug;$(ProjectDir)Engine\Source\ThirdParty\DirectXTK\Lib\$(PlatformTarget)\$(Configuration);%(AdditionalLibraryDirectories);$(VcpkgRoot)\installed\x64-windows\lib;$(LibraryPath);$(ProjectDir)Engine\Source\ThirdParty\Lua\$(Configuration)\lib;$(ProjectDir)Engine\Source\ThirdParty\PhysX\lib\x64\$(Configuration)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>DirectXTK.lib;libfbxsdk.lib;lua.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;PhysXCooking_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>DirectXTK.lib;libfbxsdk.lib;lua.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;PhysXCooking_64.lib;PhysXVehicle_static_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)Engine\Source\ThirdParty\Lua\$(Configuration)\dll\lua.dll" "$(OutDir)"
@@ -205,6 +205,7 @@ xcopy /y /d "$(ProjectDir)Engine\Source\ThirdParty\FBX_SDK\2020.3.7\lib\x64\$(Co
     <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\ViewerControlPanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\ViewerMenuPanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\ViewerParticleEmitters.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Core\Physics\Car\SnippetVehicleSceneQuery.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Core\Physics\Car\VehicleManager.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Core\Physics\PhysX.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Core\Physics\PhysXCallback.cpp" />
@@ -499,6 +500,7 @@ xcopy /y /d "$(ProjectDir)Engine\Source\ThirdParty\FBX_SDK\2020.3.7\lib\x64\$(Co
     <ClInclude Include="Engine\Source\Runtime\CoreUObject\UObject\Template\SubClassOf.h" />
     <ClInclude Include="Engine\Source\Editor\PropertyEditor\AnimSequenceEditorPanel.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Math\Distribution.h" />
+    <ClInclude Include="Engine\Source\Runtime\Core\Physics\Car\SnippetVehicleSceneQuery.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Physics\Car\VehicleManager.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Physics\PhysX.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Physics\PhysXCallback.h" />
