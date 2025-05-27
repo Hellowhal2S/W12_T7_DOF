@@ -334,6 +334,8 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetConstraints_Internal()
     
          // 5. ConstraintInstance에 저장
          FConstraintInstance* Instance = new FConstraintInstance(this, ConstraintSetup->JointName, joint);
+         Instance->JointHandle->userData = (void*)Instance;
+
          Constraints.Add(Instance);
      }
 }

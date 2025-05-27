@@ -732,7 +732,7 @@ UStaticMesh* FManagerOBJ::CreateStaticMesh(const FString& filePath)
     
     UBodySetup* BodySetup = FObjectFactory::ConstructObject<UBodySetup>(nullptr);
 
-    if (staticMeshRenderData->ObjectName == L"Cube.Obj")
+    if (staticMeshRenderData->ObjectName == L"Cube.obj")
     {
         FKBoxElem NewBox;
         NewBox.X = 0.5f;                      // 기본 박스 절반 크기 X
@@ -741,14 +741,14 @@ UStaticMesh* FManagerOBJ::CreateStaticMesh(const FString& filePath)
         NewBox.Center = FVector::ZeroVector;   // 로컬 오프셋
         BodySetup->AggGeom.BoxElems.Add(NewBox);
     }
-    else if (staticMeshRenderData->ObjectName == L"Sphere.Obj")
+    else if (staticMeshRenderData->ObjectName == L"Sphere.obj")
     {
         FKSphereElem NewSphere;
         NewSphere.Radius = 0.5f;                // 기본값: 반경 10
         NewSphere.Center = FVector::ZeroVector;  // 본 로컬 오프셋
         BodySetup->AggGeom.SphereElems.Add(NewSphere);
     }
-    else if (staticMeshRenderData->ObjectName == L"Capsule.Obj")
+    else if (staticMeshRenderData->ObjectName == L"Capsule.obj")
     {
         FKSphylElem NewCapsule;
         NewCapsule.Radius     = 0.5f;           // 캡슐 반지름
