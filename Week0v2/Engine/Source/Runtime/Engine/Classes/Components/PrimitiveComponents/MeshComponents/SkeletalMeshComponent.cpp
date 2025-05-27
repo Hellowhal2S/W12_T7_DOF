@@ -561,7 +561,9 @@ void USkeletalMeshComponent::CreateRagdoll(const PxVec3& worldRoot)
         if (child.body == nullptr || parent.body == nullptr)
             continue;
 
-        PxVec3 anchorPos = (child.body->getGlobalPose().p + parent.body->getGlobalPose().p) * 0.5f;
+        // Use the child bone's position as anchor
+        FVector anchorF = Bones[parentIndex].GlobalTransform.GetTranslationVector();
+        PxVec3 anchorPos = PxVec3(anchorF.X, anchorF.Y, anchorF.Z);
 
         PxTransform localParent = parent.body->getGlobalPose().getInverse() * PxTransform(anchorPos);
         PxTransform localChild = child.body->getGlobalPose().getInverse() * PxTransform(anchorPos);
