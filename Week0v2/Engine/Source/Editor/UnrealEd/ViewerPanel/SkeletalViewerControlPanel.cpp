@@ -1,8 +1,10 @@
 ﻿#include "SkeletalViewerControlPanel.h"
 
+#include "Animation/Skeleton.h"
 #include "Components/Mesh/SkeletalMesh.h"
 #include "ImGui/imgui.h"
 #include "UObject/UObjectIterator.h"
+#include "tinyfiledialogs/tinyfiledialogs.h"
 
 void FSkeletalViewerControlPanel::Render()
 {
@@ -26,18 +28,41 @@ void FSkeletalViewerControlPanel::Render()
         
         if (ImGui::Button("\ue9d6",IconSize))
         {
+            char const* lFilterPatterns[1] = { "*.DDAL" };
+            const char* FileName = tinyfd_saveFileDialog("Save Skeletal File", "Contents/MySkeletal", 1, lFilterPatterns, "DDAL(.DDAL) file");
+
+            if (FileName == nullptr)
+            {
+                ImGui::PopFont();
+                ImGui::End();
+                ImGui::PopStyleColor();
+                return;
+            }
             FArchive Ar;
             SkeletalMesh->Serialize(Ar);
-            Ar.SaveToFile("aaaa.bin");
+            Ar.SaveToFile(FileName);
         }
         ImGui::SameLine();
         if (ImGui::Button("\ue950",IconSize))
         {
+            char const* lFilterPatterns[1] = { "*.DDAL" };
+            const char* FileName = tinyfd_openFileDialog("Open Skeletal File", "Contents/MySkeletal", 1, lFilterPatterns, "DDAL(.DDAL) file", 0);
+
+            if (FileName == nullptr)
+            {
+                tinyfd_messageBox("Error", "파일을 불러올 수 없습니다.", "ok", "error", 1);
+                ImGui::PopFont();
+                ImGui::End();
+                ImGui::PopStyleColor();
+                return;
+            }
+
             FArchive Ar;
             USkeletalMesh* SkeletalMesh = FObjectFactory::ConstructObject<USkeletalMesh>(nullptr);
-            Ar.LoadFromFile("aaaa.bin");
-            SkeletalMesh->GetRenderData().Name = "Aaaa";
+            Ar.LoadFromFile(FileName);
             SkeletalMesh->Deserialize(Ar);
+            SkeletalMesh->GetRenderData().Name = FileName;
+            SkeletalMesh->GetSkeleton()->GetRefSkeletal()->Name = FileName;
         }
         ImGui::PopFont();
         
