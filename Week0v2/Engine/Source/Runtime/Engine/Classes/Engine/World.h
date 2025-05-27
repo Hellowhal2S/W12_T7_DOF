@@ -11,6 +11,7 @@
 #include "Physics/PhysX.h"
 #define SCOPED_READ_LOCK(scene) physx::PxSceneReadLock readLock(scene);
 
+class VehicleManager;
 class APlayerController;
 class FObjectFactory;
 class AActor;
@@ -150,6 +151,7 @@ private:
     PxScene* gScene;
     PxDefaultCpuDispatcher* gDispatcher;
     std::vector<FGameObject> gObjects;
+    VehicleManager* VehicleManager;
     
 public:
     // serialize

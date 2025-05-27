@@ -536,8 +536,21 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         AStaticMeshActor* TempActor = World->SpawnActor<AStaticMeshActor>();
                         TempActor->SetActorLabel(TEXT("OBJ_DODGE"));
                         UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
-                        FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
-                        MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
+
+                        // FManagerOBJ::CreateStaticMesh("Assets/Tesla_Cybertruck/Tesla_Cybertruck.obj");
+                        // MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Tesla_Cybertruck.obj"));
+                        
+                        // FManagerOBJ::CreateStaticMesh("Assets/Chrysler_Saratoga_1960/Chrysler_Saratoga_1960.obj");
+                        // MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Chrysler_Saratoga_1960.obj"));
+                            
+                        //FManagerOBJ::CreateStaticMesh("Assets/Avent_sport/Avent_sport.obj");
+                        //MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Avent_sport.obj"));
+                            
+                        FManagerOBJ::CreateStaticMesh("Assets/VAZ2101_Rat/VAZ2101_Rat.obj");
+                        MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"VAZ2101_Rat.obj"));
+                            
+                        // FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
+                        // MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
                         SpawnedActor = TempActor;
                         break;
                     }

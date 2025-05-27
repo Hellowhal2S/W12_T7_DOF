@@ -12,4 +12,5 @@ PxPvdTransport*         gTransport = nullptr;
 
 PxDefaultCpuDispatcher* gDispatcher = nullptr;
 MySimulationEventCallback* gMyCallback = nullptr;
+PxVehicleDrivableSurfaceToTireFrictionPairs* gFrictionPairs = nullptr;
 

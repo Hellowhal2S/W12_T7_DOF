@@ -18,6 +18,7 @@
 #include "Script/LuaManager.h"
 #include "UObject/UObjectArray.h"
 #include "UnrealEd/PrimitiveBatch.h"
+#include "Physics/Car/VehicleManager.h"
 
 UWorld::UWorld(const UWorld& Other): UObject(Other)
                                    , defaultMapName(Other.defaultMapName)
@@ -38,6 +39,7 @@ void UWorld::InitWorld()
 
     // PhysicsScene 초기화
     InitPhysicsScene();
+    
     
     if (WorldType == EWorldType::Editor)
     {
@@ -62,7 +64,7 @@ void UWorld::InitPhysicsScene()
     gMyCallback = new MySimulationEventCallback();
     sceneDesc.simulationEventCallback = gMyCallback;
     gScene = gPhysics->createScene(sceneDesc);
-        
+    
     PxPvdSceneClient* PvdClient = gScene->getScenePvdClient();
     if (PvdClient)
     {
@@ -77,6 +79,12 @@ void UWorld::InitPhysicsScene()
     PxShape* planeShape;
     GroundPlane->getShapes(&planeShape, 1);
     planeShape->setSimulationFilterData(FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All));
+    PxFilterData QryFilterData;
+    // QryFilterData.word0 = ...; // 다른 필터링 정보 (옵션)
+    // QryFilterData.word1 = ...; // 다른 필터링 정보 (옵션)
+    // QryFilterData.word2 = ...; // 다른 필터링 정보 (옵션)
+    QryFilterData.word3 = 0; // FPhysX::InitVehicleSDK에서 설정한 기본 지면 타입 ID (0)
+    planeShape->setQueryFilterData(QryFilterData);
     GroundPlane->setName("GroundPlane");
     gScene->addActor(*GroundPlane);
 
@@ -112,6 +120,17 @@ void UWorld::InitPhysicsScene()
     TriggerBox.rigidBody->setName("TriggerBox");
     TriggerBox.scene = gScene;
     gObjects.push_back(TriggerBox);
+
+    // Init Vehicle Manager
+    VehicleManager = new class VehicleManager(gScene);
+    if (VehicleManager)
+    {
+        VehicleManager->InitVehicleSetupData();
+
+        // Create Player Car
+        PxTransform InitialVehiclePose(PxVec3(0.f, 5.f, 2.f));
+        VehicleManager->CreatePlayerVehicle(InitialVehiclePose);
+    }
 
     printf("Init Physics Scene\n");
 }
@@ -159,10 +178,23 @@ FGameObject UWorld::CreateBox(
     return obj;
 }
 
-void UWorld::Simulate(float dt) {
+void UWorld::Simulate(float dt)
+{
     gScene->simulate(dt);
     gScene->fetchResults(true);
-    for (auto& obj : gObjects) obj.UpdateFromPhysics();
+    
+    for (auto& obj : gObjects)
+        obj.UpdateFromPhysics();
+
+    if (VehicleManager)
+    {
+        // float accel = GetInputAxisValue("MoveForward");
+        // float brake = GetInputAxisValue("Brake");
+        // float steer = GetInputAxisValue("MoveRight");
+        // bool handbrake = IsInputActionPressed("Handbrake");
+        // VehicleManager->UpdatePlayerVehicleInput(accel, brake, steer, handbrake);
+        VehicleManager->UpdateAllVehicles(dt);
+    }
 }
 
 void UWorld::LoadLevel(const FString& LevelName)
@@ -248,7 +280,7 @@ void UWorld::Release()
     // TODO Level -> Release로 바꾸기
     // Level->Release();
     GUObjectArray.MarkRemoveObject(this);
-
+    
 	pickingGizmo = nullptr;
 	ReleaseBaseObject();
 
@@ -260,6 +292,12 @@ void UWorld::Release()
     
     gDispatcher->release();
     gDispatcher = nullptr;
+
+    if (VehicleManager)
+    {
+        delete VehicleManager;
+        VehicleManager = nullptr;
+    }
 }
 
 void UWorld::ClearScene()

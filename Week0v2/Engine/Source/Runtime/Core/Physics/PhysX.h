@@ -2,6 +2,7 @@
 
 #include <PxPhysicsAPI.h>
 #include "PhysXCallback.h"
+#include "vehicle/PxVehicleSDK.h"
 
 struct FVector;
 using namespace physx;
@@ -15,6 +16,7 @@ extern PxPvdTransport*         gTransport;
 extern PxMaterial*             gMaterial;
 extern PxDefaultCpuDispatcher* gDispatcher;
 extern MySimulationEventCallback* gMyCallback;
+extern PxVehicleDrivableSurfaceToTireFrictionPairs* gFrictionPairs;
 
 struct FPhysX
 {
@@ -68,9 +70,9 @@ struct FPhysX
         return PxFilterFlag::eDEFAULT;
     }
     
-    static void InitPhysX() {
+    static void InitPhysX()
+    {
         gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
-        
         gPvd = PxCreatePvd(*gFoundation);
         gTransport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
         if (!gPvd || !gTransport)
@@ -83,9 +85,47 @@ struct FPhysX
         {
             printf("fail : PVD connect() \n");
         }
-        
-
         gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
         gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+
+        if (!InitVehicleSDK())
+        {
+            printf("Error: Vehicle SDK initialization failed\n");
+        }
+    }
+
+    static void ShutdownVehicleSDK()
+    {
+        if (gFrictionPairs)
+        {
+            gFrictionPairs->release();
+            gFrictionPairs = nullptr;
+        }
+        PxCloseVehicleSDK();
+    }
+
+private:
+    static bool InitVehicleSDK()
+    {
+        if (!PxInitVehicleSDK(*gPhysics))
+        {
+            printf("Error: PxInitVehicleSDK failed!\n");
+            return false;
+        }
+
+        // Z-up, X-Forward 기준으로 설정
+        PxVehicleSetBasisVectors(PxVec3(0,0,1), PxVec3(1,0,0)); 
+        PxVehicleSetUpdateMode(PxVehicleUpdateMode::eVELOCITY_CHANGE);
+
+        // 기본 지면 타입 및 마찰력 설정
+        PxVehicleDrivableSurfaceType surfaceTypes[1];
+        surfaceTypes[0].mType = 0; // 기본 지면 타입
+        const PxReal defaultFriction = 1.0f;
+        gFrictionPairs = PxVehicleDrivableSurfaceToTireFrictionPairs::allocate(1, 1); // 1개의 타이어 타입, 1개의 지면 타입
+        const PxMaterial* drivableSurfaceMaterials[1] = {gMaterial}; // 지면 재질
+        gFrictionPairs->setup(1, 1, drivableSurfaceMaterials, surfaceTypes);
+        gFrictionPairs->setTypePairFriction(0, 0, defaultFriction); // 타이어 타입 0, 지면 타입 0 간의 마찰력
+        
+        return true;
     }
 };
