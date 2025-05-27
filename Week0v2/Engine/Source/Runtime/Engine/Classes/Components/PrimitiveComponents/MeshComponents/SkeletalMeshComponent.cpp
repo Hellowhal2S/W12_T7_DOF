@@ -281,9 +281,12 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
 
 void USkeletalMeshComponent::ReleaseBodies()
 {
+    PxScene* gScene = GetWorld()->GetPhysicsScene();
     for (FBodyInstance* Body : Bodies)
     {
+        gScene->removeActor(*Body->RigidActorHandle);
         Body->Release();
+        delete Body;
     }
     Bodies.Empty();
 }

@@ -235,7 +235,12 @@ void UStaticMeshComponent::LoadAndConstruct(const FActorComponentInfo& Info)
 
 void UStaticMeshComponent::ReleaseBody()
 {
-    BodyInstance.Release();
+    PxScene* gScene = GetWorld()->GetPhysicsScene();
+    if (BodyInstance.RigidActorHandle != nullptr)
+    {
+        gScene->removeActor(*BodyInstance.RigidActorHandle);
+        BodyInstance.Release();
+    }
 }
 
 UObject* UStaticMeshComponent::Duplicate(UObject* InOuter)

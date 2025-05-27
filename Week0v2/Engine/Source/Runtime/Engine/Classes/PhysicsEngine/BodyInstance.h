@@ -198,6 +198,7 @@ public:
     {
         if (RigidActorHandle)
         {
+            RigidActorHandle->userData = nullptr;
             RigidActorHandle->release();
         }
     }

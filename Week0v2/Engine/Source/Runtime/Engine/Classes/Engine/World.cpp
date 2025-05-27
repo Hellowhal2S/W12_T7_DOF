@@ -82,38 +82,38 @@ void UWorld::InitPhysicsScene()
     GroundPlane->setName("GroundPlane");
     gScene->addActor(*GroundPlane);
 
-    FGameObject FallingBox = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
-    if (auto* rigidDynamic = FallingBox.rigidBody->is<physx::PxRigidDynamic>())
-    {
-        rigidDynamic->setAngularDamping(0.5f);
-        rigidDynamic->setLinearDamping (0.5f);
-        rigidDynamic->setMass          (10.0f);
-    }
-    FallingBox.rigidBody->setName("FallingBox");
-    FallingBox.scene = gScene;
-    gObjects.push_back(FallingBox);
-        
-    FGameObject BigBox = CreateBox(PxVec3(0, 0, 1),
-                                   PxVec3(100, 100, 1),
-                                   FPhysX::EActorType::Static);
-    if (auto* rigidDynamic = BigBox.rigidBody->is<physx::PxRigidDynamic>())
-    {
-        rigidDynamic->setAngularDamping(0.5f);
-        rigidDynamic->setLinearDamping (0.5f);
-        rigidDynamic->setMass          (10.0f);
-    }
-    BigBox.rigidBody->setName("BigBox");
-    BigBox.scene = gScene;
-    gObjects.push_back(BigBox);
-    
-    FGameObject TriggerBox = CreateBox(
-                PxVec3(0, 0, 20),
-            PxVec3(5, 5, 1),
-                    FPhysX::EActorType::Static,
-                    PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE);
-    TriggerBox.rigidBody->setName("TriggerBox");
-    TriggerBox.scene = gScene;
-    gObjects.push_back(TriggerBox);
+    // FGameObject FallingBox = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
+    // if (auto* rigidDynamic = FallingBox.rigidBody->is<physx::PxRigidDynamic>())
+    // {
+    //     rigidDynamic->setAngularDamping(0.5f);
+    //     rigidDynamic->setLinearDamping (0.5f);
+    //     rigidDynamic->setMass          (10.0f);
+    // }
+    // FallingBox.rigidBody->setName("FallingBox");
+    // FallingBox.scene = gScene;
+    // gObjects.push_back(FallingBox);
+    //     
+    // FGameObject BigBox = CreateBox(PxVec3(0, 0, 1),
+    //                                PxVec3(100, 100, 1),
+    //                                FPhysX::EActorType::Static);
+    // if (auto* rigidDynamic = BigBox.rigidBody->is<physx::PxRigidDynamic>())
+    // {
+    //     rigidDynamic->setAngularDamping(0.5f);
+    //     rigidDynamic->setLinearDamping (0.5f);
+    //     rigidDynamic->setMass          (10.0f);
+    // }
+    // BigBox.rigidBody->setName("BigBox");
+    // BigBox.scene = gScene;
+    // gObjects.push_back(BigBox);
+    //
+    // FGameObject TriggerBox = CreateBox(
+    //             PxVec3(0, 0, 20),
+    //         PxVec3(5, 5, 1),
+    //                 FPhysX::EActorType::Static,
+    //                 PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE);
+    // TriggerBox.rigidBody->setName("TriggerBox");
+    // TriggerBox.scene = gScene;
+    // gObjects.push_back(TriggerBox);
 
     printf("Init Physics Scene\n");
 }
