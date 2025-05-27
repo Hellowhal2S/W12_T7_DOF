@@ -2,11 +2,9 @@
 
 #include "ImGUI/imgui.h"
 
-
 #include "Engine/World.h"
 #include "Engine/FLoaderOBJ.h"
 #include "UnrealEd/ImGuiWidget.h"
-
 
 #include "Components/GameFramework/RotatingMovementComponent.h"
 #include "Components/LuaComponent.h"
@@ -26,7 +24,7 @@
 #include "Light/ShadowMapAtlas.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "UnrealEd/EditorViewportClient.h"
-#include "UObject/FunctionRegistry.h"
+#include "UnrealEd/PrimitiveBatch.h"
 
 void FPhysicsSkeletonPanel::Initialize(float InWidth, float InHeight)
 {
@@ -90,14 +88,18 @@ void FPhysicsSkeletonPanel::Render()
         else if (USkeletalMeshComponent* SkeletalMeshComponet = PickedActor->GetComponentByClass<USkeletalMeshComponent>())
         {
             RenderForSkeletalMesh(SkeletalMeshComponet);
+            SkeletalMesh = SkeletalMeshComponet->GetSkeletalMesh();
             PhysicsAsset = SkeletalMeshComponet->GetSkeletalMesh()->GetPhysicsAsset();
         }
     }
 
     RenderShapeProperty(PickedActor);
-
     ImGui::End();
-    PhysicsDetailPanel.Render();
+
+    UPrimitiveBatch& PrimitiveBatch = UPrimitiveBatch::GetInstance();
+    
+    PhysicsDetailPanel.Render(SelectedBodySetup);
+
     ImGui::PopStyleColor();
 }
 
@@ -309,6 +311,11 @@ void FPhysicsSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int
                 {
                     if (ImGui::TreeNode("%s",GetData(boneName)))
                     {
+                        if (ImGui::IsItemClicked())
+                        {
+                            SelectedBodySetup = BodySetup;
+                        }
+
                         const FKAggregateGeom& Agg = BodySetup->AggGeom;
 
                         // 콜리전 프리미티브 출력

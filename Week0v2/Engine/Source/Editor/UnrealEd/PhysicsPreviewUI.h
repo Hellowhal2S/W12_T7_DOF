@@ -19,6 +19,7 @@ public:
     void AddEditorPanel(const FString& PanelId, const std::shared_ptr<UEditorPanel>& EditorPanel);
     std::shared_ptr<UEditorPanel> GetEditorPanel(const FString& PanelId);
 
+    void SetSkeletalMesh(USkeletalMesh* InSkeletalMesh);
 private:
     TMap<FString, std::shared_ptr<UEditorPanel>> Panels;
     UWorld* World = nullptr;

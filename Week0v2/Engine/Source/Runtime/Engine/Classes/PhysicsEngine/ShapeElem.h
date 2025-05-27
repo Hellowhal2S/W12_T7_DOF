@@ -22,5 +22,9 @@ struct FKShapeElem
     
     FName Name;
 
+    bool bEnableCollision = true;
     EAggCollisionShape::Type ShapeType;
+
+    void Serialize(FArchive& Ar) const;
+    void Deserialize(FArchive& Ar);
 };

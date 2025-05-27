@@ -20,12 +20,18 @@ extern PxCooking*                 gCooking;
 
 struct FPhysX
 {
+    enum class EActorType : PxU32 {
+        Dynamic = 0,
+        Static  = 1
+    };
+    
     enum class ECollisionGroup : PxU32 {
         Default     = (1<<0),
         Player      = (1<<1),
         Enemy       = (1<<2),
         Environment = (1<<3),
-        All         = Default | Player | Enemy | Environment
+        BoxCollider = (1<<4),
+        All         = Default | Player | Enemy | Environment | BoxCollider
     };
 
     static PxFilterData MakeFilterData(
@@ -46,13 +52,13 @@ struct FPhysX
         PxU32 constantBlockSize)
     {
         // 1) 트리거 판정
-        if (PxFilterObjectIsTrigger(attr0) || PxFilterObjectIsTrigger(attr1)) {
+        if (PxFilterObjectIsTrigger(attr0) || PxFilterObjectIsTrigger(attr1))
+        {
             pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
             return PxFilterFlag::eDEFAULT;
         }
         // 2) 그룹 검사
-        if (!((fd0.word0 & fd1.word1) &&
-              (fd1.word0 & fd0.word1)))
+        if (!((fd0.word0 & fd1.word1) && (fd1.word0 & fd0.word1)))
             return PxFilterFlag::eSUPPRESS;
         // 3) Contact + Notification 플래그
         pairFlags  = PxPairFlag::eCONTACT_DEFAULT

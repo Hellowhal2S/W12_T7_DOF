@@ -43,6 +43,7 @@ private:
     void AddBoxToBone(const FName& BoneName);
     void AddCapsuleToBone(const FName& BoneName);
     void AddConvexToBone(const FName& BoneName);
+
 private:
     float Width = 0, Height = 0;
     
@@ -59,7 +60,9 @@ private:
     UActorComponent* LastComponent = nullptr;
     bool bFirstFrame = true;
 
+    USkeletalMesh* SkeletalMesh = nullptr;
     UPhysicsAsset* PhysicsAsset = nullptr;
+    UBodySetup*       SelectedBodySetup = nullptr;  // ← 추가
 
     //FBX
 private:
@@ -69,8 +72,7 @@ private:
     
     TMap<int, FBoneRotation> BoneRotations;
     TMap<int, FBoneRotation> PrevBoneRotations;
-
+    
     FSkeletonDetailPanel PhysicsDetailPanel;
 };
-
 

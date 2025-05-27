@@ -5,3 +5,7 @@ void UEditorPanel::SetParticleSystemComponent(UParticleSystemComponent* InPartic
 {
 
 }
+
+void UEditorPanel::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
+{
+}

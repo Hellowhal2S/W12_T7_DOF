@@ -26,7 +26,7 @@ public:
 		return Stream.str().empty();
 	}
 
-private:
+public:
 	std::string SaveToBinary() 
 	{
 		auto PrevPos = Stream.tellg();

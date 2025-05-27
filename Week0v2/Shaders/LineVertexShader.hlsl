@@ -527,7 +527,7 @@ PS_INPUT mainVS(VS_INPUT input)
         int N = 32;
         uint sphereIndex = sphereInstanceID / (3 * N);
         
-        color = float4(0.0, 1.0, 0.0, 1.0);
+        color = g_SphereData[sphereIndex].Color;
     }
     else if (input.instanceID < obbInstanceStart)
     {
@@ -552,7 +552,7 @@ PS_INPUT mainVS(VS_INPUT input)
         pos = ComputeCapsulePosition(capsuleLocalID, input.vertexID);
         uint capsuleIndex = capsuleLocalID / 100;
         
-        color = float4(0.0, 1.0, 0.0, 1.0);
+        color = g_Capsules[capsuleIndex].Color;
     }
     else
     {

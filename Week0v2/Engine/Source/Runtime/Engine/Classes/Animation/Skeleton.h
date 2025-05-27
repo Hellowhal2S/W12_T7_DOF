@@ -11,6 +11,8 @@ public:
     
     FRefSkeletal* GetRefSkeletal() const { return RefSkeletal; }
     void SetRefSkeletal(FRefSkeletal* InRefSkeletal) { RefSkeletal = InRefSkeletal; }
+    void Serialize(FArchive& Ar) const;
+    void Deserialize(FArchive& Ar);
 private:
     FRefSkeletal* RefSkeletal;
 };

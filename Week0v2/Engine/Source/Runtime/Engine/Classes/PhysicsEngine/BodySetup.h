@@ -8,7 +8,22 @@ class UBodySetup : public UBodySetupCore
     DECLARE_CLASS(UBodySetup, UBodySetupCore)
 public:
     UBodySetup() = default;
-    ~UBodySetup() = default;
+    ~UBodySetup() {} 
 
     FKAggregateGeom AggGeom;
+
+    void Serialize(FArchive& Ar)
+    {
+        Ar << BoneName;
+        Ar << AggGeom;
+    }
+
+    void Deserialize(FArchive& Ar)
+    {
+        Ar >> BoneName;
+        Ar >> AggGeom;
+    }
 };
+
+
+

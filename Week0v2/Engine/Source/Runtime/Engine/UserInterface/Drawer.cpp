@@ -10,6 +10,9 @@
 #include "UObject/UObjectIterator.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "Skeletal/SkeletalDefine.h"
+#include "UnrealEd/PhysicsPreviewUI.h"
+#include "UnrealEd/UnrealEd.h"
+
 void FDrawer::Toggle()
 {
     bIsOpen = !bIsOpen;
@@ -89,6 +92,7 @@ void FDrawer::RenderContentDrawer()
             USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(SkeletalMeshActor->GetRootComponent());
             // SkeletalMeshComponent->SetSkeletalMesh(FFBXLoader::CreateSkeletalMesh(Obj->GetRenderData().Name));
             SkeletalMeshComponent->SetSkeletalMesh(Obj);
+            Cast<UEditorEngine>(GEngine)->GetPhysicsPreviewUI()->SetSkeletalMesh(Obj);
             break;
         }
     }

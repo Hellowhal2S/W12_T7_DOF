@@ -21,7 +21,7 @@ public:
     void SetWorld(UWorld* InWorld) { World = InWorld; }
 
     virtual void SetParticleSystemComponent(UParticleSystemComponent* InParticleSystemComponent);
-
+    virtual void SetSkeletalMesh(USkeletalMesh* InSkeletalMesh);
     UWorld* World = nullptr;
 
     uint32 PanelIndex = 0;

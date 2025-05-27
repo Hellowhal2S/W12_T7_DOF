@@ -461,7 +461,6 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                             Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->InstantiatePhysicsAssetBodies_Internal();
                         }
                         SpawnedActor->SetActorLabel("SkeletalMesh");
-                            
                         break;
                     }
                     case OBJ_CHARACTER:

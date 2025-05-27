@@ -48,4 +48,7 @@ private:
     
     void UpdateChildBones(int ParentIndex);
     void ApplyRotationToBone(int BoneIndex, float DeltaAngleInDegrees, const FVector& RotationAxis);
+public:
+    void Serialize(FArchive& Ar) const;
+    void Deserialize(FArchive& Ar);
 };
