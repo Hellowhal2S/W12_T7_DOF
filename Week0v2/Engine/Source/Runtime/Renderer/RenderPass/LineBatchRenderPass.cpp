@@ -359,6 +359,7 @@ void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh
             {
                 // 로컬 -> 월드
                 FVector centerWS = boneM.TransformPosition(C.Center);
+                boneM = boneM * FMatrix::CreateRotationMatrix(C.Rotation.Roll,C.Rotation.Pitch, C.Rotation.Yaw);
                 // 캡슐 축 방향: 로컬 Z 축을 UpVector 로 가정
                 FVector upWS = FMatrix::TransformVector(FVector::UpVector,boneM);
                 PB.AddCapsule(centerWS, upWS, C.Length * 0.5f, C.Radius, ColorCapsule);

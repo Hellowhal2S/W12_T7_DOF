@@ -38,6 +38,10 @@ public:
     
 
     float GDeltaTime = 0.0f;
+
+    float FocusDepth   = 1000.0f;   // 초점 맞출 거리 (world space depth)
+    float FocusRange   = 300.0f;    // 초점 허용 범위
+    float MaxCoc       = 8.0f;      // 최대 Circle of Confusion 크기 (픽셀 단위)
 private:
     TArray<HWND> AppWindows;
     HWND DefaultWindow;

@@ -84,9 +84,9 @@ void FDepthOfFieldRenderPass::UpdateDoFConstant(const std::shared_ptr<FViewportC
     FDoFConstants DofConstant;
 
     // 테스트용 기본 값 설정
-    DofConstant.FocusDepth   = 1000.0f;   // 초점 맞출 거리 (world space depth)
-    DofConstant.FocusRange   = 300.0f;    // 초점 허용 범위
-    DofConstant.MaxCoc       = 8.0f;      // 최대 Circle of Confusion 크기 (픽셀 단위)
+    DofConstant.FocusDepth   = GEngineLoop.FocusDepth;   // 초점 맞출 거리 (world space depth)
+    DofConstant.FocusRange   = GEngineLoop.FocusRange;    // 초점 허용 범위
+    DofConstant.MaxCoc       = GEngineLoop.MaxCoc;      // 최대 Circle of Confusion 크기 (픽셀 단위)
 
     FVector2D viewportSize;
     viewportSize.X =curEditorViewportClient->GetD3DViewport().Width;
