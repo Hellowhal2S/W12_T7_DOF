@@ -54,6 +54,7 @@ public:
     
     //BodyInstance
     void InstantiatePhysicsAssetBodies_Internal();
+    void InstantiatePhysicsAssetConstraints_Internal();
     void ReleaseBodies();
 
     UPROPERTY(int, SelectedSubMeshIndex);

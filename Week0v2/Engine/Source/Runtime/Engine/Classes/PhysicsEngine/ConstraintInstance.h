@@ -1,14 +1,20 @@
 ﻿#pragma once
 #include <extensions/PxJoint.h>
 
+#include "UObject/NameTypes.h"
+
+class UPrimitiveComponent;
 using namespace physx;
 
 struct FConstraintInstance
 {
-    FConstraintInstance()=default;
-    ~FConstraintInstance()=default;
-
     PxJoint* JointHandle = nullptr;
+
+    UPrimitiveComponent* OwnerComponent;
+    FName ConstraintName;
+
+    FConstraintInstance(UPrimitiveComponent* InOwnerComponent, FName InConstraintName, PxD6Joint* InJoint);
+    ~FConstraintInstance()=default;
 
     //void* PxJoint->userData
 public:

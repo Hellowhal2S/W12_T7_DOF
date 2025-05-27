@@ -19,12 +19,19 @@ struct FKJointElem
     FString ParentBoneName;
     FString ChildBoneName;
     FQuat Orientation;
-    
+
+    // Radian 값
     float TwistLimitMin;
     float TwistLimitMax;
     float SwingLimitMin;
     float SwingLimitMax;
 
+     // eX      = 0,	//!< motion along the X axis
+     // eY      = 1,	//!< motion along the Y axis
+     // eZ      = 2,	//!< motion along the Z axis
+     // eTWIST  = 3,	//!< motion around the X axis
+     // eSWING1 = 4,	//!< motion around the Y axis
+     // eSWING2 = 5,	//!< motion around the Z axis
     EJointMotion AxisMotions[6];
     
     void Serialize(FArchive& Ar) const

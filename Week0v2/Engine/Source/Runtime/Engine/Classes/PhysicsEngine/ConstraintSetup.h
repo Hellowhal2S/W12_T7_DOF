@@ -11,17 +11,17 @@ public:
     UConstraintSetup() = default;
     ~UConstraintSetup() = default;
 
-    TArray<FKJointElem> JointElems;
+    FKJointElem JointElem;
 
     void Serialize(FArchive& Ar)
     {
         Ar << JointName;
-        Ar << JointElems;
+        Ar << JointElem;
     }
 
     void Deserialize(FArchive& Ar)
     {
         Ar >> JointName;
-        Ar >> JointElems;
+        Ar >> JointElem;
     }
 };

@@ -14,6 +14,11 @@ public:
 
     TArray<UBodySetup*> BodySetup;
     TArray<UConstraintSetup*> ConstraintSetup;
+
+    TMap<FName, int32> BodySetupIndexMap;
+
+    void UpdateBodySetupIndexMap();
+    
     void Serialize(FArchive& Ar);
     void Deserialize(FArchive& Ar);
 };
