@@ -228,13 +228,14 @@ struct alignas(16) FBoneConstant
 
 struct alignas(16) FDoFConstants
 {
+    float NearPlane;
+    float FarPlane;
     float FocusDepth;
     float FocusRange;
-    float MaxCoc;
-    float Padding0;
 
+    float MaxCoc;
     FVector2D InvScreenSize;
-    FVector2D Padding1;
+    float Padding0;
 };
 
 enum class EShaderConstantBuffer : std::uint8_t

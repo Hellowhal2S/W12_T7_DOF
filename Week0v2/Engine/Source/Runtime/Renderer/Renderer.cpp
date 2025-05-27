@@ -307,9 +307,9 @@ void FRenderer::Render(const std::shared_ptr<FEditorViewportClient>& ActiveViewp
         FogRenderPass->Prepare(ActiveViewportClient);
         FogRenderPass->Execute(ActiveViewportClient);
     }
-    // DepthOfFieldRenderPass->Prepare(ActiveViewportClient);
-    // DepthOfFieldRenderPass->Execute(ActiveViewportClient);
-    //
+     DepthOfFieldRenderPass->Prepare(ActiveViewportClient);
+     //DepthOfFieldRenderPass->Execute(ActiveViewportClient);
+    
     BlurRenderPass->Prepare(ActiveViewportClient);
     BlurRenderPass->Execute(ActiveViewportClient);
 
