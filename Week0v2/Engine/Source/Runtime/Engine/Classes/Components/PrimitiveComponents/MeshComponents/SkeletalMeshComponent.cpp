@@ -304,14 +304,12 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetConstraints_Internal()
      for (const UConstraintSetup* ConstraintSetup : GetSkeletalMesh()->GetPhysicsAsset()->ConstraintSetup)
      {
          // 1. 부모/자식 바디 찾기
-         int* parentIndex = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName);
-         int* childIndex  = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(ConstraintSetup->JointElem.ChildBoneName);
-    
          FBodyInstance* parentBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName))];
          FBodyInstance* childBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ChildBoneName))];
 
          const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
          
+         int* parentIndex = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName.ToString());
          FVector anchorF = Bones[*parentIndex].GlobalTransform.GetTranslationVector();
          PxVec3 anchorPos = ToPxVec3(anchorF);
          
@@ -350,6 +348,13 @@ void USkeletalMeshComponent::ReleaseBodies()
         delete Body;
     }
     Bodies.Empty();
+    
+    for (FConstraintInstance* Constraint : Constraints)
+    {
+        Constraint->Release();
+        delete Constraint;
+    }
+    Constraints.Empty();
 }
 
 void USkeletalMeshComponent::PlayAnimation(UAnimSequence* NewAnimToPlay, bool bLooping)

@@ -43,6 +43,8 @@ private:
     void AddBoxToBone(const FName& BoneName);
     void AddCapsuleToBone(const FName& BoneName);
     void AddConvexToBone(const FName& BoneName);
+    bool CheckAndCreateConstraintSetup(const FName& JointName, UConstraintSetup*& FoundSetup);
+    void AddConstraintToBone(const FName& ChildBoneName, const FName& ParentBoneName);
 
 private:
     float Width = 0, Height = 0;

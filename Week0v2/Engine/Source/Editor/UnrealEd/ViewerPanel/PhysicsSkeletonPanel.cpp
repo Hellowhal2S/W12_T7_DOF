@@ -23,6 +23,7 @@
 #include "Components/PrimitiveComponents/MeshComponents/SkeletalMeshComponent.h"
 #include "Light/ShadowMapAtlas.h"
 #include "PhysicsEngine/BodySetup.h"
+#include "PhysicsEngine/ConstraintSetup.h"
 #include "UnrealEd/EditorViewportClient.h"
 #include "UnrealEd/PrimitiveBatch.h"
 
@@ -98,7 +99,7 @@ void FPhysicsSkeletonPanel::Render()
 
     UPrimitiveBatch& PrimitiveBatch = UPrimitiveBatch::GetInstance();
     
-    PhysicsDetailPanel.Render(SelectedBodySetup);
+    PhysicsDetailPanel.Render(SelectedBodySetup, PhysicsAsset->ConstraintSetup);
 
     ImGui::PopStyleColor();
 }
@@ -230,6 +231,16 @@ void FPhysicsSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int
     // 본 이름 가져오기
     const FString& boneName = SkeletalMesh->GetRenderData().Bones[BoneIndex].BoneName;
 
+    FString ParentBoneName;
+    if (SkeletalMesh->GetRenderData().Bones[BoneIndex].ParentIndex != INDEX_NONE)
+    {
+        ParentBoneName = SkeletalMesh->GetRenderData().Bones[SkeletalMesh->GetRenderData().Bones[BoneIndex].ParentIndex].BoneName;
+    }
+    else
+    {
+        ParentBoneName = TEXT("None");       
+    }
+
     // 트리 노드 플래그 설정
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick| ImGuiTreeNodeFlags_DefaultOpen;
 
@@ -290,6 +301,8 @@ void FPhysicsSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int
              AddCapsuleToBone(boneName);
         if (ImGui::MenuItem("Add Convex Collision"))
             AddConvexToBone(boneName);
+        if (ImGui::MenuItem("Add Constraint"))
+            AddConstraintToBone(boneName, ParentBoneName);
         ImGui::EndPopup();
     }
 
@@ -328,6 +341,27 @@ void FPhysicsSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int
                         for (const auto& C : Agg.ConvexElems)
                             ImGui::BulletText("Convex  Verts=%d", C.VertexData.Num());
 
+                        if (PhysicsAsset->ConstraintSetup.Num() > 0)
+                        {
+                            for (const UConstraintSetup* Constraint : PhysicsAsset->ConstraintSetup)
+                            {
+                                // 이 본이 Parent 또는 Child로 연결된 Constraint만 출력
+                                if (Constraint &&
+                                    (Constraint->JointElem.ChildBoneName == boneName ||
+                                     Constraint->JointElem.ParentBoneName == boneName))
+                                {
+                                    ImGui::BulletText("[%s]", *Constraint->JointName.ToString());
+
+                                    // 추가로 제한 각도, 타입 등도 출력 가능
+                                    ImGui::Text("  Twist: [%.1f, %.1f]  Swing: [%.1f, %.1f]",
+                                        FMath::RadiansToDegrees(Constraint->JointElem.TwistLimitMin),
+                                        FMath::RadiansToDegrees(Constraint->JointElem.TwistLimitMax),
+                                        FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMin),
+                                        FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMax));
+                                }
+                            }
+                        }
+                        
                         ImGui::TreePop();
                     }
                     break; // 하나만 매칭되면 탈출
@@ -445,6 +479,58 @@ void FPhysicsSkeletonPanel::AddConvexToBone(const FName& BoneName)
     FoundSetup->AggGeom.ConvexElems.Add(NewConvex);
     
 }
+
+bool FPhysicsSkeletonPanel::CheckAndCreateConstraintSetup(const FName& JointName, UConstraintSetup*& FoundSetup)
+{
+    if (!PhysicsAsset) return false;
+
+    FoundSetup = nullptr;
+    for (UConstraintSetup* Setup : PhysicsAsset->ConstraintSetup)
+    {
+        if (Setup && Setup->JointName == JointName)
+        {
+            FoundSetup = Setup;
+            break;
+        }
+    }
+    if (!FoundSetup)
+    {
+        FoundSetup = FObjectFactory::ConstructObject<UConstraintSetup>(PhysicsAsset);
+        FoundSetup->JointName = JointName;
+        PhysicsAsset->ConstraintSetup.Add(FoundSetup);
+    }
+    return true;
+}
+
+void FPhysicsSkeletonPanel::AddConstraintToBone(const FName& ChildBoneName, const FName& ParentBoneName)
+{
+    if (ParentBoneName == TEXT("None"))
+        return;
+    
+    UConstraintSetup* FoundSetup;
+    FName JointName = FName(ParentBoneName.ToString() + "->" + ChildBoneName.ToString());
+    if (!CheckAndCreateConstraintSetup(JointName, FoundSetup)) return;
+
+    FKJointElem NewConstraint;
+    NewConstraint.ChildBoneName = ChildBoneName;
+    NewConstraint.ParentBoneName = ParentBoneName;
+    
+    // 각도 제한
+    NewConstraint.TwistLimitMin = -PxPi / 4;
+    NewConstraint.TwistLimitMax = PxPi / 4;
+    NewConstraint.SwingLimitMin = -PxPi / 6;
+    NewConstraint.SwingLimitMax = PxPi / 6;
+    
+    // 축 제한
+    NewConstraint.AxisMotions[PxD6Axis::eX]      = EJointMotion::Locked;
+    NewConstraint.AxisMotions[PxD6Axis::eY]      = EJointMotion::Locked;
+    NewConstraint.AxisMotions[PxD6Axis::eZ]      = EJointMotion::Locked;
+    NewConstraint.AxisMotions[PxD6Axis::eTWIST]  = EJointMotion::Limited;
+    NewConstraint.AxisMotions[PxD6Axis::eSWING1] = EJointMotion::Limited;
+    NewConstraint.AxisMotions[PxD6Axis::eSWING2] = EJointMotion::Limited;
+    FoundSetup->JointElem = NewConstraint;
+}
+
 // 뼈가 선택되었을 때 호출되는 함수
 void FPhysicsSkeletonPanel::OnBoneSelected(int BoneIndex)
 {
