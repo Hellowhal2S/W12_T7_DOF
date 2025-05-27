@@ -147,8 +147,8 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* value)
     AABB = SkeletalMesh->GetRenderData().BoundingBox;
 
     // CreateBoneComponents();
-    // CreateRagdollBones();
-    // CreateRagdoll(PxVec3(0, 0, 100));
+     //CreateRagdollBones();
+    //CreateRagdoll(PxVec3(0, 0, 100));
     CreateRagedollBodySetUp();
 }
 
@@ -204,6 +204,7 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
         // 1. 본의 월드 트랜스폼 계산
         int* Index = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(BodySetup->BoneName.ToString());
         FVector GlobalPose = GetSkeletalMesh()->GetRenderData().Bones[*Index].GlobalTransform.GetTranslationVector();
+
         
         // 2. 콜라이더 생성
         TArray<PxShape*> shapes;
@@ -230,14 +231,12 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
         // Capsule
         for (const FKSphylElem& capsule : BodySetup->AggGeom.SphylElems)
         {
-            PxCapsuleGeometry pxCapsule(capsule.Radius, capsule.Length); 
+            PxCapsuleGeometry pxCapsule(capsule.Radius, capsule.Length * 0.5); 
 
             // Unreal은 Z축이 축 → PhysX는 X축이 축 → 회전 필요
-            FQuat unrealRot = capsule.Rotation.ToQuaternion();
-            FQuat toX = FQuat::FindBetweenNormals(FVector(0, 0, 1), FVector(1, 0, 0));
-            FQuat fixedRot = unrealRot; // Z->X 축 변환 적용
+            FQuat Rot = capsule.Rotation.ToQuaternion();
 
-            PxTransform shapeLocalPose(ToPxVec3(capsule.Center), ToPxQuat(fixedRot));
+            PxTransform shapeLocalPose(ToPxVec3(capsule.Center), ToPxQuat(Rot));
             PxShape* shape = gPhysics->createShape(pxCapsule, *gMaterial);
             shape->setLocalPose(shapeLocalPose);
 
@@ -700,51 +699,50 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
     if (!SkeletalMesh || !SkeletalMesh->GetPhysicsAsset())
         return;
 
-    const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
+    TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
     UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
-    PhysicsAsset->BodySetup.Empty(); 
+    PhysicsAsset->BodySetup.Empty();
 
     for (int i = 0; i < Bones.Num(); ++i)
     {
-        const FBone& Bone = Bones[i];
+        FBone& Bone = Bones[i];
         FName BoneName = Bone.BoneName;
 
-        // 1. BodySetup 생성
         UBodySetup* BodySetup = FObjectFactory::ConstructObject<UBodySetup>(PhysicsAsset);
         BodySetup->BoneName = BoneName;
         PhysicsAsset->BodySetup.Add(BodySetup);
 
-        // 2. 캡슐 생성: 부모 본이 있는 경우에만 생성
         if (Bone.ParentIndex >= 0)
         {
             const FBone& ParentBone = Bones[Bone.ParentIndex];
-            const FBone& ChildBone = Bones[i];
             FVector parentPos = ParentBone.GlobalTransform.GetTranslationVector();
             FVector childPos = Bone.GlobalTransform.GetTranslationVector();
-            FVector offset = (childPos - parentPos);
+            FVector offset = childPos - parentPos;
 
             float length = offset.Magnitude();
-            float radius = FMath::Clamp(length * 0.1f, 0.5f, 3.0f);
+            float radius = FMath::Clamp(length * 0.1f, 0.5f, 1.0f);
             float halfHeight = FMath::Max(length * 0.5f - radius, 0.1f);
-
-            // ⬇ 로컬 좌표로 변환
-            FMatrix ChildWorldMatrix = ChildBone.GlobalTransform;
-            FVector localCenter = ChildWorldMatrix.Inverse().TransformPosition((parentPos + childPos) * 0.5f);
+            FVector mid = (parentPos + childPos) * 0.5f;
             FVector dir = offset.GetSafeNormal();
-            FQuat localRotation = FQuat::FindBetweenNormals(FVector(0, 0, 1), dir); // 언리얼식 Z축 기준
 
-            // 3. FKSphylElem 생성
+            FQuat worldRot = FQuat::FindBetweenNormals(FVector(0, 0, 1), dir);
+            FQuat boneWorldRot = FQuat(Bone.GlobalTransform);
+            FQuat localRot = FQuat::Inverse(boneWorldRot) * worldRot;
+
+            FVector localCenter = Bone.GlobalTransform.InverseTransformPosition(mid);
+
             FKSphylElem capsule;
             capsule.Radius = radius;
             capsule.Length = halfHeight * 2.0f;
             capsule.Center = localCenter;
-            capsule.Rotation = localRotation.Rotator(); // local space rotation
+            capsule.Rotation = localRot.Rotator();
 
-            // 4. BodySetup에 추가
             BodySetup->AggGeom.SphylElems.Add(capsule);
         }
     }
 }
+
+
 
 
 
