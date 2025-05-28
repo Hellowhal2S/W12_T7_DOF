@@ -409,3 +409,14 @@ void FMatrix::Deserialize(FArchive& Ar)
     Ar >> M[2][0] >> M[2][1] >> M[2][2] >> M[2][3];
     Ar >> M[3][0] >> M[3][1] >> M[3][2] >> M[3][3];
 }
+
+FVector FMatrix::InverseTransformPosition(FVector& WorldPosition)
+{
+    FMatrix Inv = Inverse();
+    return Inv.TransformPosition(WorldPosition);
+}
+FVector FMatrix::InverseTransformVector(FVector& WorldPosition)
+{
+    FMatrix Inv = Inverse();
+    return TransformVector(WorldPosition, Inv);
+}

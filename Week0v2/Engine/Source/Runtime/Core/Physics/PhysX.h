@@ -2,6 +2,7 @@
 
 #include <PxPhysicsAPI.h>
 #include "PhysXCallback.h"
+#include "Define.h"
 
 struct FVector;
 using namespace physx;
@@ -15,6 +16,7 @@ extern PxPvdTransport*         gTransport;
 extern PxMaterial*             gMaterial;
 extern PxDefaultCpuDispatcher* gDispatcher;
 extern MySimulationEventCallback* gMyCallback;
+extern PxCooking*                 gCooking;
 
 struct FPhysX
 {
@@ -66,6 +68,8 @@ struct FPhysX
         
         // return: 이 페어를 accept(eDEFAULT)할지, ignore(eSUPPRESS)할지 결정
         return PxFilterFlag::eDEFAULT;
+
+
     }
     
     static void InitPhysX() {
@@ -86,6 +90,19 @@ struct FPhysX
         
 
         gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
+        gCooking = PxCreateCooking(PX_PHYSICS_VERSION, *gFoundation, PxCookingParams(PxTolerancesScale()));
         gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+        PxInitExtensions(*gPhysics, gPvd);
     }
 };
+
+struct RagdollBone
+{
+    FString name;
+    PxVec3 offset;                // 부모로부터의 위치
+    PxVec3 halfSize;              // Capsule or box 크기
+    int parentIndex;              // -1이면 루트
+    PxRigidDynamic* body = nullptr;
+    PxJoint* joint = nullptr;
+};
+

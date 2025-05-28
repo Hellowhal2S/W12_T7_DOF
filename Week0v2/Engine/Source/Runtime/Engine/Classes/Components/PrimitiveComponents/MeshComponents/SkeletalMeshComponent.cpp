@@ -1,3 +1,4 @@
+
 #include "SkeletalMeshComponent.h"
 
 #include "LaunchEngineLoop.h"
@@ -18,6 +19,10 @@
 #include "UObject/Casts.h"
 #include "Animation/AnimSingleNodeInstance.h"
 #include "Animation/CustomAnimInstance/TestAnimInstance.h"
+#include "Engine/FEditorStateManager.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "Physics/PhysX.h"
 
 USkeletalMeshComponent::USkeletalMeshComponent(const USkeletalMeshComponent& Other)
     : UMeshComponent(Other)
@@ -25,6 +30,7 @@ USkeletalMeshComponent::USkeletalMeshComponent(const USkeletalMeshComponent& Oth
     , SelectedSubMeshIndex(Other.SelectedSubMeshIndex)
 {
 }
+
 uint32 USkeletalMeshComponent::GetNumMaterials() const
 {
     if (SkeletalMesh == nullptr) return 0;
@@ -40,7 +46,7 @@ UMaterial* USkeletalMeshComponent::GetMaterial(uint32 ElementIndex) const
         {
             return OverrideMaterials[ElementIndex];
         }
-    
+
         if (SkeletalMesh->GetMaterials().IsValidIndex(ElementIndex))
         {
             return SkeletalMesh->GetMaterials()[ElementIndex]->Material;
@@ -100,14 +106,17 @@ int USkeletalMeshComponent::CheckRayIntersection(FVector& rayOrigin, FVector& ra
 
     int nPrimitives = (!indices) ? (vCount / 3) : (iCount / 3);
     float fNearHitDistance = FLT_MAX;
-    for (int i = 0; i < nPrimitives; i++) {
+    for (int i = 0; i < nPrimitives; i++)
+    {
         int idx0, idx1, idx2;
-        if (!indices) {
+        if (!indices)
+        {
             idx0 = i * 3;
             idx1 = i * 3 + 1;
             idx2 = i * 3 + 2;
         }
-        else {
+        else
+        {
             idx0 = indices[i * 3];
             idx2 = indices[i * 3 + 1];
             idx1 = indices[i * 3 + 2];
@@ -120,28 +129,32 @@ int USkeletalMeshComponent::CheckRayIntersection(FVector& rayOrigin, FVector& ra
         FVector v2 = *reinterpret_cast<FVector*>(pbPositions + idx2 * stride);
 
         float fHitDistance;
-        if (IntersectRayTriangle(rayOrigin, rayDirection, v0, v1, v2, fHitDistance)) {
-            if (fHitDistance < fNearHitDistance) {
+        if (IntersectRayTriangle(rayOrigin, rayDirection, v0, v1, v2, fHitDistance))
+        {
+            if (fHitDistance < fNearHitDistance)
+            {
                 pfNearHitDistance = fNearHitDistance = fHitDistance;
             }
             nIntersections++;
         }
-
     }
     return nIntersections;
 }
 
 
 void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* value)
-{ 
+{
     SkeletalMesh = value;
     VBIBTopologyMappingName = SkeletalMesh->GetFName();
     value->UpdateBoneHierarchy();
-    
+
     OverrideMaterials.SetNum(value->GetMaterials().Num());
     AABB = SkeletalMesh->GetRenderData().BoundingBox;
 
     // CreateBoneComponents();
+    // CreateRagdollBones();
+    // CreateRagdoll(PxVec3(0, 0, 100));
+    //CreateRagedollBodySetUp();
 }
 
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
@@ -178,14 +191,27 @@ USkeletalMesh* USkeletalMeshComponent::LoadSkeletalMesh(const FString& FilePath)
 
 void USkeletalMeshComponent::UpdateBoneHierarchy()
 {
-    for (int i=0;i<SkeletalMesh->GetRenderData().Vertices.Num();i++)
+    for (int i = 0; i < SkeletalMesh->GetRenderData().Vertices.Num(); i++)
     {
-         SkeletalMesh->GetRenderData().Vertices[i].Position
-        = SkeletalMesh->GetSkeleton()->GetRefSkeletal()->RawVertices[i].Position;
+        SkeletalMesh->GetRenderData().Vertices[i].Position
+            = SkeletalMesh->GetSkeleton()->GetRefSkeletal()->RawVertices[i].Position;
     }
-    
+
     SkeletalMesh->UpdateBoneHierarchy();
     SkinningVertex();
+}
+
+
+void USkeletalMeshComponent::ReleaseBodies()
+{
+    PxScene* gScene = GetWorld()->GetPhysicsScene();
+    for (FBodyInstance* Body : Bodies)
+    {
+        gScene->removeActor(*Body->RigidActorHandle);
+        Body->Release();
+        delete Body;
+    }
+    Bodies.Empty();
 }
 
 void USkeletalMeshComponent::PlayAnimation(UAnimSequence* NewAnimToPlay, bool bLooping)
@@ -208,7 +234,6 @@ void USkeletalMeshComponent::SetAnimSequence(UAnimSequence* NewAnimToPlay)
 
 UAnimSequence* USkeletalMeshComponent::GetAnimSequence() const
 {
-
     return GetSingleNodeInstance()->GetCurrentSequence();
 }
 
@@ -266,7 +291,9 @@ void USkeletalMeshComponent::DuplicateSubObjects(const UObject* Source, UObject*
     AnimInstance = Cast<UAnimInstance>(Cast<USkeletalMeshComponent>(Source)->AnimInstance->Duplicate(this));
 }
 
-void USkeletalMeshComponent::PostDuplicate() {}
+void USkeletalMeshComponent::PostDuplicate()
+{
+}
 
 void USkeletalMeshComponent::BeginPlay()
 {
@@ -282,7 +309,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
     if (GEngineLoop.Renderer.GetSkinningMode() == ESkinningType::CPU)
     {
         SkeletalMesh->UpdateSkinnedVertices();
-        bCPUSkinned = true; 
+        bCPUSkinned = true;
     }
     else
     {
@@ -290,7 +317,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
         {
             SkeletalMesh->ResetToOriginalPose();
             bCPUSkinned = false;
-        }   
+        }
     }
 }
 
@@ -468,7 +495,291 @@ void USkeletalMeshComponent::SetLoopEndFrame(int32 InLoopEndFrame)
     }
 }
 
-void USkeletalMeshComponent::SetAnimationMode(EAnimationMode InAnimationMode)
+void USkeletalMeshComponent::CreateRagdollBones()
 {
-    AnimationMode = InAnimationMode;
+    const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
+
+    RagdollBones.Empty();
+    RagdollBones.Reserve(Bones.Num());
+
+    for (int i = 0; i < Bones.Num(); ++i)
+    {
+        const FBone& Bone = Bones[i];
+        RagdollBone* ragBone = new RagdollBone();
+        ragBone->name = Bone.BoneName;
+        ragBone->parentIndex = Bone.ParentIndex;
+
+        if (Bone.ParentIndex < 0)
+        {
+            ragBone->offset = PxVec3(0, 0, 0);
+            ragBone->halfSize = PxVec3(0.0, 0.0, 0.0);
+            ragBone->offset = PxVec3(Bone.GlobalTransform.GetTranslationVector().X,
+                                     Bone.GlobalTransform.GetTranslationVector().Y,
+                                     Bone.GlobalTransform.GetTranslationVector().Z);
+        }
+        else
+        {
+            FVector parentPos = Bones[Bone.ParentIndex].GlobalTransform.GetTranslationVector();
+            FVector childPos = Bone.GlobalTransform.GetTranslationVector();
+            FVector offset = childPos - parentPos;
+
+            float length = offset.Magnitude();
+            float radius = FMath::Clamp(length * 0.1f, 0.5f, 3.0f);
+            float halfHeight = FMath::Max(length * 0.5f - radius, 0.1f);
+
+            ragBone->offset = PxVec3(offset.X, offset.Y, offset.Z);
+            ragBone->halfSize = PxVec3(radius, radius, halfHeight);
+        }
+
+        RagdollBones.Add(ragBone);
+    }
+}
+
+void USkeletalMeshComponent::CreateRagdoll(const PxVec3& worldRoot)
+{
+    const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
+
+    for (int childIndex = 0; childIndex < Bones.Num(); ++childIndex)
+    {
+        const FBone& childBone = Bones[childIndex];
+        int parentIndex = childBone.ParentIndex;
+        RagdollBone& bone = *RagdollBones[childIndex];
+
+        if (parentIndex < 0)
+        {
+            PxVec3 offset = bone.offset + worldRoot;
+            PxRigidDynamic* DummyBody = gPhysics->createRigidDynamic(PxTransform(offset));
+            bone.body = DummyBody;
+            GetWorld()->GetPhysicsScene()->addActor(*DummyBody);
+            continue;
+        }
+
+        FVector parentPos = Bones[parentIndex].GlobalTransform.GetTranslationVector() + FVector(worldRoot.x, worldRoot.y, worldRoot.z);;
+        FVector childPos = childBone.GlobalTransform.GetTranslationVector() + FVector(worldRoot.x, worldRoot.y, worldRoot.z);;
+        FVector mid = (parentPos + childPos) * 0.5f;
+        FVector dir = (childPos - parentPos).GetSafeNormal();
+
+        FQuat rot = FQuat::FindBetweenNormals(FVector(1, 0, 0), dir);
+        PxQuat pxRot(rot.X, rot.Y, rot.Z, rot.W);
+
+        float radius = bone.halfSize.x;
+        float halfHeight = bone.halfSize.z;
+        PxTransform capsulePose(PxVec3(mid.X, mid.Y, mid.Z), pxRot);
+
+        PxCapsuleGeometry capsule(radius, halfHeight);
+        PxShape* shape = gPhysics->createShape(capsule, *gMaterial);
+
+        PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
+        shape->setSimulationFilterData(fd);
+
+        PxRigidDynamic* body = gPhysics->createRigidDynamic(capsulePose);
+        body->attachShape(*shape);
+
+        PxRigidBodyExt::updateMassAndInertia(*body, 1.0f);
+
+        GetWorld()->GetPhysicsScene()->addActor(*body);
+        bone.body = body;
+    }
+
+    for (int childIndex = 0; childIndex < Bones.Num(); ++childIndex)
+    {
+        int parentIndex = Bones[childIndex].ParentIndex;
+        if (parentIndex < 0) continue;
+
+        RagdollBone& child = *RagdollBones[childIndex];
+        RagdollBone& parent = *RagdollBones[parentIndex];
+
+        if (child.body == nullptr || parent.body == nullptr)
+            continue;
+
+        // Use the child bone's position as anchor
+        FVector anchorF = Bones[parentIndex].GlobalTransform.GetTranslationVector() + FVector(worldRoot.x, worldRoot.y, worldRoot.z);;
+        PxVec3 anchorPos = PxVec3(anchorF.X, anchorF.Y, anchorF.Z);
+
+        PxTransform localParent = parent.body->getGlobalPose().getInverse() * PxTransform(anchorPos);
+        PxTransform localChild = child.body->getGlobalPose().getInverse() * PxTransform(anchorPos);
+
+        PxD6Joint* joint = PxD6JointCreate(*gPhysics, parent.body, localParent, child.body, localChild);
+        joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
+        joint->setMotion(PxD6Axis::eSWING1, PxD6Motion::eLIMITED);
+        joint->setMotion(PxD6Axis::eSWING2, PxD6Motion::eLIMITED);
+        joint->setTwistLimit(PxJointAngularLimitPair(-PxPi / 4, PxPi / 4));
+        joint->setSwingLimit(PxJointLimitCone(PxPi / 6, PxPi / 6));
+
+        child.joint = joint;
+    }
+}
+
+void USkeletalMeshComponent::CreateRagedollBodySetUp()
+{
+    if (!SkeletalMesh || !SkeletalMesh->GetPhysicsAsset())
+        return;
+
+    TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
+    UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
+    PhysicsAsset->BodySetup.Empty();
+
+    for (int i = 0; i < Bones.Num(); ++i)
+    {
+        FBone& Bone = Bones[i];
+        FName BoneName = Bone.BoneName;
+
+        UBodySetup* BodySetup = FObjectFactory::ConstructObject<UBodySetup>(PhysicsAsset);
+        BodySetup->BoneName = BoneName;
+        PhysicsAsset->BodySetup.Add(BodySetup);
+
+        if (Bone.ParentIndex >= 0)
+        {
+            FBone& ParentBone = Bones[Bone.ParentIndex];
+            const FVector parentPosWS = ParentBone.GlobalTransform.GetTranslationVector();
+            const FVector childPosWS = Bone.GlobalTransform.GetTranslationVector();
+            FVector offsetWS = childPosWS - parentPosWS;
+
+            const float length = offsetWS.Magnitude();
+            const float radius = FMath::Clamp(length * 0.1f, 0.1f, 1.0f);
+
+            // 캡슐 길이 계산 (실린더 부분만 고려, 반구는 별도)
+            const float cylinderLength = FMath::Max(length - radius * 2, 0.1f); // 최소 길이 보장
+            const float halfHeight = cylinderLength * 0.5f;
+
+            // 부모 본의 로컬 공간에서의 방향 계산
+            const FVector localOffset = ParentBone.GlobalTransform.InverseTransformVector(offsetWS);
+            const FVector localDir = localOffset.GetSafeNormal();
+
+            // 로컬 공간에서 Z축을 localDir로 회전
+            const FQuat localRotation = FQuat::FindBetweenNormals(FVector(0, 0, 1), localDir);
+
+            // 위치: 부모에서 자식 방향으로 radius만큼 떨어진 지점을 시작점으로 계산
+            FVector capsuleStartWS = parentPosWS;
+            FVector capsuleEndWS = childPosWS;
+            FVector midPointWS = (capsuleStartWS + capsuleEndWS) * 0.5f;
+
+            const FVector localCenter = ParentBone.GlobalTransform.InverseTransformPosition(midPointWS);
+
+            // 캡슐 저장
+            FKSphylElem capsule;
+            capsule.Radius = radius;
+            capsule.Length = cylinderLength; // 실린더 부분만의 길이
+            capsule.Center = localCenter;
+            capsule.Rotation = localRotation.Rotator();
+
+            BodySetup->AggGeom.SphylElems.Add(capsule);
+        }
+    }
+}
+
+
+void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
+{
+    Bodies.Empty();
+    UPhysicsAsset* PhysicsAsset = GetSkeletalMesh()->GetPhysicsAsset();
+    const auto& Bones = GetSkeletalMesh()->GetRenderData().Bones;
+    const auto& RefSkeletal = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal();
+
+    static const FQuat ToX = FQuat::FindBetweenNormals(FVector(0, 0, 1), FVector(1, 0, 0));
+
+    for (const UBodySetup* BodySetup : PhysicsAsset->BodySetup)
+    {
+        int32* pIndex = RefSkeletal->BoneNameToIndexMap.Find(BodySetup->BoneName.ToString());
+        if (!pIndex) continue;
+
+        int32 ChildIndex = *pIndex;
+        int32 ParentIndex = Bones[ChildIndex].ParentIndex;
+        if (ParentIndex < 0) continue;
+
+        // 부모 본의 월드 행렬
+        const FMatrix ParentWorldTM = Bones[ParentIndex].GlobalTransform * GetWorldMatrix();
+        const FVector globalPos = Bones[ParentIndex].GlobalTransform.GetTranslationVector();
+
+        TArray<PxShape*> Shapes;
+
+        // 3a. Sphere
+        for (const FKSphereElem& S : BodySetup->AggGeom.SphereElems)
+        {
+            PxSphereGeometry geo(S.Radius);
+            PxShape* shape = gPhysics->createShape(geo, *gMaterial);
+            shape->setLocalPose(PxTransform(ToPxVec3(S.Center)));
+            shape->setSimulationFilterData(FPhysX::MakeFilterData(
+                FPhysX::ECollisionGroup::Environment,
+                FPhysX::ECollisionGroup::All));
+            Shapes.Add(shape);
+        }
+
+        // 3b. Box
+        for (const FKBoxElem& B : BodySetup->AggGeom.BoxElems)
+        {
+            PxBoxGeometry geo(B.X * 0.5f, B.Y * 0.5f, B.Z * 0.5f);
+            FQuat rot = B.Rotation.ToQuaternion();
+            PxShape* shape = gPhysics->createShape(geo, *gMaterial);
+            shape->setLocalPose(PxTransform(ToPxVec3(B.Center), ToPxQuat(rot)));
+            shape->setSimulationFilterData(FPhysX::MakeFilterData(
+                FPhysX::ECollisionGroup::Environment,
+                FPhysX::ECollisionGroup::All));
+            Shapes.Add(shape);
+        }
+
+        // 3c. Capsule (부모 기준 로컬 → 월드 변환)
+        for (const FKSphylElem& C : BodySetup->AggGeom.SphylElems)
+        {
+            FVector centerWS = ParentWorldTM.TransformPosition(C.Center);
+            FVector centerLocal = centerWS - globalPos;
+
+            FQuat localRot = C.Rotation.ToQuaternion();
+            FQuat worldRot = ParentWorldTM.ToQuat() * localRot;
+            FQuat finalRot = worldRot * ToX;
+
+            PxCapsuleGeometry geo(C.Radius, C.Length * 0.5f); // PhysX expects halfLength
+            PxTransform pose(ToPxVec3(centerLocal), ToPxQuat(finalRot));
+            PxShape* shape = gPhysics->createShape(geo, *gMaterial);
+            shape->setLocalPose(pose);
+            shape->setSimulationFilterData(FPhysX::MakeFilterData(
+                FPhysX::ECollisionGroup::Environment,
+                FPhysX::ECollisionGroup::All));
+            Shapes.Add(shape);
+        }
+
+        // 3d. Convex
+        for (const FKConvexElem& X : BodySetup->AggGeom.ConvexElems)
+        {
+            PxConvexMeshDesc desc;
+            desc.points.count = X.VertexData.Num();
+            desc.points.stride = sizeof(PxVec3);
+            desc.points.data = X.VertexData.GetData();
+            desc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+
+            PxDefaultMemoryOutputStream buf;
+            if (!gCooking->cookConvexMesh(desc, buf)) continue;
+
+            PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+            PxConvexMesh* mesh = gPhysics->createConvexMesh(input);
+
+            PxShape* shape = gPhysics->createShape(PxConvexMeshGeometry(mesh), *gMaterial);
+
+            FVector center(0, 0, 0);
+            for (auto& v : X.VertexData) center += v;
+            center /= X.VertexData.Num();
+
+            shape->setLocalPose(PxTransform(ToPxVec3(center)));
+            shape->setSimulationFilterData(FPhysX::MakeFilterData(
+                FPhysX::ECollisionGroup::Environment,
+                FPhysX::ECollisionGroup::All));
+            Shapes.Add(shape);
+        }
+
+        // 4. 바디 생성 및 씬 등록
+        FBodyInstance* Instance = new FBodyInstance(this,
+            EBodyType::Dynamic,
+            ToPxVec3(globalPos),
+            BodySetup->BoneName);
+
+        for (PxShape* shape : Shapes)
+        {
+            Instance->AttachShape(*shape);
+        }
+
+        PxRigidBodyExt::updateMassAndInertia(*Instance->RigidDynamicHandle, 1.0f);
+        Instance->RigidActorHandle->userData = (void*)Instance;
+        GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
+        Bodies.Add(Instance);
+    }
 }

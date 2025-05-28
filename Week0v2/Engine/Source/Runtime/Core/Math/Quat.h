@@ -1,5 +1,6 @@
 #pragma once
 #include "Matrix.h"
+#include "Vector.h"
 #include "Serialization/Archive.h"
 
 // 쿼터니언
@@ -65,6 +66,44 @@ struct FQuat
     static FQuat Slerp(const FQuat& Quat1, const FQuat& Quat2, float Slerp);
     
     static FQuat Slerp_NotNormalized(const FQuat& Quat1, const FQuat& Quat2, float Slerp);
+
+    static FQuat FindBetweenNormals(const FVector& A, const FVector& B)
+    {
+        FVector v0 = A.GetSafeNormal();
+        FVector v1 = B.GetSafeNormal();
+
+        float dot = v0.Dot(v1);
+
+        // 벡터가 완전히 반대인 경우 (180도 회전)
+        if (dot < -1.0f + KINDA_SMALL_NUMBER)
+        {
+            FVector orthogonal = FVector(1.0f, 0.0f, 0.0f).Cross(v0);
+            if (orthogonal.MagnitudeSquared() < KINDA_SMALL_NUMBER)
+            {
+                orthogonal = FVector(0.0f, 1.0f, 0.0f).Cross(v0);
+            }
+            orthogonal.Normalize();
+            return FQuat::FromAxisAngle(orthogonal, PI);
+        }
+
+        FVector cross = v0.Cross(v1);
+        float s = sqrtf((1 + dot) * 2);
+        float invs = 1.0f / s;
+
+        FQuat q;
+        q.W = s * 0.5f;
+        q.X = cross.X * invs;
+        q.Y = cross.Y * invs;
+        q.Z = cross.Z * invs;
+        return q.GetSafeNormal();
+
+    }
+    static FQuat Inverse(const FQuat& Q)
+    {
+        float normSq = Q.X * Q.X + Q.Y * Q.Y + Q.Z * Q.Z + Q.W * Q.W;
+        return FQuat(-Q.X/ normSq, -Q.Y/ normSq, -Q.Z/ normSq, Q.W/ normSq);
+    }   
+
 };
 
 inline const FQuat FQuat::Identity = FQuat(1.0f, 0.0f, 0.0f, 0.0f);

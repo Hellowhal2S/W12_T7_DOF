@@ -8,6 +8,16 @@ void MySimulationEventCallback::onContact(const PxContactPairHeader& pairHeader,
                                           const PxContactPair* pairs,
                                           PxU32 nbPairs)
 {
+    // 삭제 플래그 체크
+    bool removedActor0 = (pairHeader.flags & PxContactPairHeaderFlag::eREMOVED_ACTOR_0);
+    bool removedActor1 = (pairHeader.flags & PxContactPairHeaderFlag::eREMOVED_ACTOR_1);
+
+    if (removedActor0 || removedActor1)
+    {
+        // 이미 삭제된 액터가 포함된 이벤트는 무시하거나 별도 처리
+        return;
+    }
+    
     PxRigidActor* actorA = pairHeader.actors[0];
     PxRigidActor* actorB = pairHeader.actors[1];
 
