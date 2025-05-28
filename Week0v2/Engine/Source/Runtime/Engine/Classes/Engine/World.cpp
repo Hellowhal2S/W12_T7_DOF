@@ -207,32 +207,11 @@ void UWorld::Simulate(float dt) {
                     break;
                 }
             }
-
-            
-            
-            int ParentIndex = skelComp->GetSkeletalMesh()->GetRenderData().Bones[Index].ParentIndex;
-
             FQuat worldQuat = FromPxQuat(pose.q).GetSafeNormal();
             FVector worldPos = FromPxVec3(pose.p);
 
             FMatrix rotM = worldQuat.ToMatrix();
             FMatrix transM = FMatrix::CreateTranslationMatrix(worldPos);
-            FMatrix globalM =FMatrix::Identity *  rotM * transM;
-            
-            // 3) 로컬 매트릭스 계산
-            FMatrix localM;
-            if (ParentIndex != INDEX_NONE)
-            {
-                // 부모 GlobalTransform 역행렬
-                FMatrix parentGlobalInv = skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].GlobalTransform.Inverse();
-                // local = global * parent^{-1}
-                localM = globalM * parentGlobalInv;
-            }
-            else
-            {
-                // 루트 본은 그대로
-                localM = globalM;
-            }
             
             // 4) 결과 저장
             FMatrix& Gmat =
