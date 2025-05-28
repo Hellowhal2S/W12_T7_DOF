@@ -143,8 +143,6 @@ public:
         return JointHandle->getScene();
     }
 
-    void* userData;
-
     static void GetBinaryMetaData(PxOutputStream& stream)
     {
         PxJoint::getBinaryMetaData(stream);

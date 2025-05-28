@@ -676,6 +676,54 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
     }
 }
 
+void USkeletalMeshComponent::CreateRagdollConstrinatSetup()
+{
+    if (!SkeletalMesh || !SkeletalMesh->GetPhysicsAsset())
+        return;
+    
+    TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
+    UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
+    PhysicsAsset->ConstraintSetup.Empty();
+    
+    for (int i = 0; i < PhysicsAsset->BodySetup.Num(); ++i)
+    {
+        FBone& Bone = Bones[i];
+
+        if (Bone.ParentIndex < 0)
+            continue;
+        
+        UConstraintSetup* ConstraintSetup = FObjectFactory::ConstructObject<UConstraintSetup>(PhysicsAsset);
+        ConstraintSetup->JointName = Bones[Bone.ParentIndex].BoneName + "-> " +  Bone.BoneName;
+        PhysicsAsset->ConstraintSetup.Add(ConstraintSetup);
+        
+        FKJointElem joint;
+        joint.ChildBoneName = Bone.BoneName;
+        joint.ParentBoneName = Bones[Bone.ParentIndex].BoneName;
+        
+        joint.Center = Bones[Bone.ParentIndex].GlobalTransform.GetTranslationVector();
+        joint.Rotation = FQuat(Bones[Bone.ParentIndex].GlobalTransform).GetSafeNormal();
+        
+        // 각도 제한
+        joint.TwistLimitMin = -PxPi / 4;
+        joint.TwistLimitMax = PxPi / 4;
+        joint.SwingLimitMin1 = -PxPi / 6;
+        joint.SwingLimitMax1 = PxPi / 6;
+        joint.SwingLimitMin2 = -PxPi / 6;
+        joint.SwingLimitMax2 = PxPi / 6;
+
+        // 축 제한
+        joint.AxisMotions[PxD6Axis::eX]      = EJointMotion::Locked;
+        joint.AxisMotions[PxD6Axis::eY]      = EJointMotion::Locked;
+        joint.AxisMotions[PxD6Axis::eZ]      = EJointMotion::Locked;
+        joint.AxisMotions[PxD6Axis::eTWIST]  = EJointMotion::Limited;
+        joint.AxisMotions[PxD6Axis::eSWING1] = EJointMotion::Limited;
+        joint.AxisMotions[PxD6Axis::eSWING2] = EJointMotion::Limited;
+        
+        ConstraintSetup->JointElem = joint;
+    }
+
+}
+
 void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
 {
     Bodies.Empty();
@@ -692,11 +740,20 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
 
         int32 ChildIndex = *pIndex;
         int32 ParentIndex = Bones[ChildIndex].ParentIndex;
-        if (ParentIndex < 0) continue;
+        
+        if (ParentIndex < 0)
+        {
+            FBodyInstance* Instance = new FBodyInstance(this, EBodyType::Dynamic, ToPxVec3(Bones[ChildIndex].GlobalTransform.GetTranslationVector()), BodySetup->BoneName);
+            PxRigidBodyExt::updateMassAndInertia(*Instance->RigidDynamicHandle, 1.0f);
+            Instance->RigidActorHandle->userData = (void*)Instance;
+            GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
+            Bodies.Add(Instance);
+            continue;
+        }
 
         // 부모 본의 월드 행렬
         const FMatrix ParentWorldTM = Bones[ParentIndex].GlobalTransform * GetWorldMatrix();
-        const FVector globalPos = Bones[ParentIndex].GlobalTransform.GetTranslationVector();
+        const FVector globalPos = Bones[ChildIndex].GlobalTransform.GetTranslationVector();
 
         TArray<PxShape*> Shapes;
 
@@ -774,10 +831,7 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
         }
 
         // 4. 바디 생성 및 씬 등록
-        FBodyInstance* Instance = new FBodyInstance(this,
-            EBodyType::Dynamic,
-            ToPxVec3(globalPos),
-            BodySetup->BoneName);
+        FBodyInstance* Instance = new FBodyInstance(this, EBodyType::Dynamic, ToPxVec3(globalPos), BodySetup->BoneName);
 
         for (PxShape* shape : Shapes)
         {
@@ -789,6 +843,7 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
         GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
         Bodies.Add(Instance);
     }
+    PhysicsAsset->UpdateBodySetupIndexMap();
 }
 
 void USkeletalMeshComponent::InstantiatePhysicsAssetConstraints_Internal()
@@ -799,17 +854,8 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetConstraints_Internal()
      for (const UConstraintSetup* ConstraintSetup : GetSkeletalMesh()->GetPhysicsAsset()->ConstraintSetup)
      {
          // 1. 부모/자식 바디 찾기
-         if (*GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName) == INDEX_NONE
-             || *GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ChildBoneName) == INDEX_NONE)
-         {
-             continue;
-         }
          FBodyInstance* parentBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName))];
          FBodyInstance* childBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ChildBoneName))];
-
-         const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
-         
-         int* parentIndex = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName.ToString());
 
          PxVec3 anchorVec = ToPxVec3(ConstraintSetup->JointElem.Center);
          PxQuat anchorRot = ToPxQuat(ConstraintSetup->JointElem.Rotation);

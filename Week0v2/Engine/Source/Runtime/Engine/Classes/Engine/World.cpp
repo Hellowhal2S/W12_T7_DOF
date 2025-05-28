@@ -180,27 +180,28 @@ void UWorld::Simulate(float dt) {
         } else if (PxRigidStatic* stat = actor->is<PxRigidStatic>()) {
             pose = stat->getGlobalPose();
         }
-        FVector newLocation = FromPxVec3(pose.p);
-        FQuat newRotation = FromPxQuat(pose.q);
         
         FBodyInstance* BodyInst = (FBodyInstance*)actor->userData;
         
         // StaticMeshComponent
         if (UStaticMeshComponent* staticComp = Cast<UStaticMeshComponent>(BodyInst->OwnerComponent)) {
-            staticComp->SetWorldLocation(newLocation);
-            staticComp->SetWorldRotation(newRotation);
+            staticComp->SetWorldLocation(FromPxVec3(pose.p));
+            staticComp->SetWorldRotation(FromPxQuat(pose.q));
         }
         // SkeletalMeshComponent - 본 단위
         else if (USkeletalMeshComponent* skelComp = Cast<USkeletalMeshComponent>(BodyInst->OwnerComponent)) {
             int* Index = skelComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(BodyInst->BoneName.ToString());
             int ParentIndex = skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].ParentIndex;
+            FMatrix RotationMatrix = FromPxQuat(pose.q).GetSafeNormal().ToMatrix();
+            FMatrix TranslationMatrix = FMatrix::CreateTranslationMatrix(FromPxVec3(pose.p));
+            FMatrix GlobalTransform = RotationMatrix * TranslationMatrix;
             if (ParentIndex != INDEX_NONE)
             {
-                skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = FMatrix::CreateRotationMatrix(newRotation.Rotator().Roll, newRotation.Rotator().Pitch, newRotation.Rotator().Yaw) * FMatrix::CreateTranslationMatrix(newLocation) * skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].GlobalTransform.Inverse();
+                skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = GlobalTransform * skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].GlobalTransform.Inverse();
             }
             else
             {
-                skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = FMatrix::CreateRotationMatrix(newRotation.Rotator().Roll, newRotation.Rotator().Pitch, newRotation.Rotator().Yaw) * FMatrix::CreateTranslationMatrix(newLocation);
+                skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = GlobalTransform;
             }
             skelComp->GetSkeletalMesh()->UpdateBoneHierarchy();
         }

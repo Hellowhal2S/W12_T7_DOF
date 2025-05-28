@@ -7,9 +7,9 @@ void UPhysicsAsset::UpdateBodySetupIndexMap()
     // update BodySetupIndexMap
     BodySetupIndexMap.Empty();
 
-    for(int32 i=0; i < BodySetup.Num(); i++)
+    for(int32 i = 0; i < BodySetup.Num(); i++)
     {
-        BodySetupIndexMap.Add(BodySetup[i]->BoneName, i-1);
+        BodySetupIndexMap.Add(BodySetup[i]->BoneName, i);
     }
 }
 

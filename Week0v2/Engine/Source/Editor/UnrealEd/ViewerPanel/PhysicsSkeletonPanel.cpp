@@ -116,6 +116,11 @@ void FPhysicsSkeletonPanel::RenderForSkeletalMesh(USkeletalMeshComponent* Skelet
     {
         SkeletalMesh->CreateRagedollBodySetUp();
     }
+    ImGui::SameLine();
+    if (ImGui::Button("딸깍2"))
+    {
+        SkeletalMesh->CreateRagdollConstrinatSetup();
+    }
 
     ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
     if (ImGui::TreeNodeEx("Skeletal Mesh", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))

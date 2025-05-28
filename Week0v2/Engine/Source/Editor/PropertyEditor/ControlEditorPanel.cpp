@@ -482,14 +482,8 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                     case OBJ_SKELETAL:
                     {
                         SpawnedActor = World->SpawnActor<ASkeletalMeshActor>();
-                        //Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->SetData("Contents/FBX/Rumba_Dancing.fbx");
-                            FArchive Ar;
-                            USkeletalMesh* SkeletalMesh = FObjectFactory::ConstructObject<USkeletalMesh>(nullptr);
+                        Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->SetData("Contents/FBX/Rumba_Dancing.fbx");
                             
-                            Ar.LoadFromFile(TEXT("Contents/Constraints.DDAL"));
-                            SkeletalMesh->Deserialize(Ar);
-                            SkeletalMesh->GetPhysicsAsset()->UpdateBodySetupIndexMap();
-                            Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->SetSkeletalMesh(SkeletalMesh);
                         if (Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->GetSkeletalMesh()->GetPhysicsAsset())
                         {
                             Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->InstantiatePhysicsAssetBodies_Internal();
