@@ -98,6 +98,11 @@ struct FQuat
         return q.GetSafeNormal();
 
     }
+    static FQuat Inverse(const FQuat& Q)
+    {
+        float normSq = Q.X * Q.X + Q.Y * Q.Y + Q.Z * Q.Z + Q.W * Q.W;
+        return FQuat(-Q.X/ normSq, -Q.Y/ normSq, -Q.Z/ normSq, Q.W/ normSq);
+    }   
 
 };
 

@@ -321,23 +321,23 @@ void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh
         {
             if (!BS) continue;
 
-            FTransform boneXF;
             FMatrix boneM;
             // 본에 매핑된 월드 트랜스폼(본 월드 매트릭스) 얻어오기
             for (auto Bone : SkeletalMesh->GetSkeletalMesh()->GetRenderData().Bones)
             {
                 if (Bone.BoneName == BS->BoneName.ToString())
                 {
-                    boneXF.SetLocation(Bone.GlobalTransform.GetTranslationVector());
                     FRotator BoneRot;
-                    Bone.GlobalTransform.GetRotationMatrix(BoneRot);
-                    boneXF.SetRotation(BoneRot.ToQuaternion());
-                    boneXF.SetScale(Bone.GlobalTransform.GetScaleVector());
-                    boneM = Bone.GlobalTransform;
+                    if (Bone.ParentIndex >= 0)
+                    {
+                        SkeletalMesh->GetSkeletalMesh()->GetRenderData().Bones[Bone.ParentIndex].GlobalTransform.GetRotationMatrix(BoneRot);
+                        boneM =  SkeletalMesh->GetSkeletalMesh()->GetRenderData().Bones[Bone.ParentIndex].GlobalTransform;
+                    }
+                    else
+                        continue;
                 }
             }
-           boneM =  boneM*SkeletalMesh->GetWorldMatrix();
-            // FMatrix boneM    = boneXF.ToMatrixWithScale();
+            boneM =  boneM * SkeletalMesh->GetWorldMatrix();
 
             // 1) Spheres
             for (const FKSphereElem& S : BS->AggGeom.SphereElems)
@@ -409,6 +409,7 @@ void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh
         }
     }
 }
+
 
 void FLineBatchRenderPass::UpdateBatchResources()
 {

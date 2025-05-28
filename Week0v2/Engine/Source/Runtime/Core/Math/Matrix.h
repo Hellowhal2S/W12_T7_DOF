@@ -57,4 +57,7 @@ public:
 
     void Serialize(FArchive& Ar) const;
     void Deserialize(FArchive& Ar);
+    FVector InverseTransformPosition(FVector& WorldPosition);
+    FVector InverseTransformVector(FVector& WorldPosition);
+
 };

@@ -108,14 +108,17 @@ int USkeletalMeshComponent::CheckRayIntersection(FVector& rayOrigin, FVector& ra
 
     int nPrimitives = (!indices) ? (vCount / 3) : (iCount / 3);
     float fNearHitDistance = FLT_MAX;
-    for (int i = 0; i < nPrimitives; i++) {
+    for (int i = 0; i < nPrimitives; i++)
+    {
         int idx0, idx1, idx2;
-        if (!indices) {
+        if (!indices)
+        {
             idx0 = i * 3;
             idx1 = i * 3 + 1;
             idx2 = i * 3 + 2;
         }
-        else {
+        else
+        {
             idx0 = indices[i * 3];
             idx2 = indices[i * 3 + 1];
             idx1 = indices[i * 3 + 2];
@@ -128,24 +131,25 @@ int USkeletalMeshComponent::CheckRayIntersection(FVector& rayOrigin, FVector& ra
         FVector v2 = *reinterpret_cast<FVector*>(pbPositions + idx2 * stride);
 
         float fHitDistance;
-        if (IntersectRayTriangle(rayOrigin, rayDirection, v0, v1, v2, fHitDistance)) {
-            if (fHitDistance < fNearHitDistance) {
+        if (IntersectRayTriangle(rayOrigin, rayDirection, v0, v1, v2, fHitDistance))
+        {
+            if (fHitDistance < fNearHitDistance)
+            {
                 pfNearHitDistance = fNearHitDistance = fHitDistance;
             }
             nIntersections++;
         }
-
     }
     return nIntersections;
 }
 
 
 void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* value)
-{ 
+{
     SkeletalMesh = value;
     VBIBTopologyMappingName = SkeletalMesh->GetFName();
     value->UpdateBoneHierarchy();
-    
+
     OverrideMaterials.SetNum(value->GetMaterials().Num());
     AABB = SkeletalMesh->GetRenderData().BoundingBox;
 
@@ -189,156 +193,14 @@ USkeletalMesh* USkeletalMeshComponent::LoadSkeletalMesh(const FString& FilePath)
 
 void USkeletalMeshComponent::UpdateBoneHierarchy()
 {
-    for (int i=0;i<SkeletalMesh->GetRenderData().Vertices.Num();i++)
+    for (int i = 0; i < SkeletalMesh->GetRenderData().Vertices.Num(); i++)
     {
-         SkeletalMesh->GetRenderData().Vertices[i].Position
-        = SkeletalMesh->GetSkeleton()->GetRefSkeletal()->RawVertices[i].Position;
+        SkeletalMesh->GetRenderData().Vertices[i].Position
+            = SkeletalMesh->GetSkeleton()->GetRefSkeletal()->RawVertices[i].Position;
     }
-    
+
     SkeletalMesh->UpdateBoneHierarchy();
     SkinningVertex();
-}
-
-void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
-{
-    Bodies.Empty();
-    for (const UBodySetup* BodySetup : GetSkeletalMesh()->GetPhysicsAsset()->BodySetup)
-    {
-        // 1. 본의 월드 트랜스폼 계산
-        int* Index = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(BodySetup->BoneName.ToString());
-        FVector GlobalPose = GetSkeletalMesh()->GetRenderData().Bones[*Index].GlobalTransform.GetTranslationVector();
-        
-        // 2. 콜라이더 생성
-        TArray<PxShape*> shapes;
-
-        // Sphere
-        for (const FKSphereElem& sphere : BodySetup->AggGeom.SphereElems)
-        {
-            PxShape* shape = gPhysics->createShape(PxSphereGeometry(sphere.Radius), *gMaterial);
-            // 콜라이더의 로컬 트랜스폼 적용(필요시)
-            shape->setLocalPose(PxTransform(ToPxVec3(sphere.Center)));
-            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
-            shape->setSimulationFilterData(fd);
-            shapes.Add(shape);
-        }
-        // Box
-        for (const FKBoxElem& box : BodySetup->AggGeom.BoxElems)
-        {
-            PxShape* shape = gPhysics->createShape(PxBoxGeometry(box.X/2, box.Y/2, box.Z/2), *gMaterial);
-            shape->setLocalPose(PxTransform(ToPxVec3(box.Center), ToPxQuat(box.Rotation.ToQuaternion())));
-            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
-            shape->setSimulationFilterData(fd);
-            shapes.Add(shape);
-        }
-        // Capsule
-        for (const FKSphylElem& capsule : BodySetup->AggGeom.SphylElems)
-        {
-            PxCapsuleGeometry pxCapsule(capsule.Radius, capsule.Length); 
-
-            // Unreal은 Z축이 축 → PhysX는 X축이 축 → 회전 필요
-            FQuat unrealRot = capsule.Rotation.ToQuaternion();
-            FQuat toX = FQuat::FindBetweenNormals(FVector(0, 0, 1), FVector(1, 0, 0));
-            FQuat fixedRot = unrealRot; // Z->X 축 변환 적용
-
-            PxTransform shapeLocalPose(ToPxVec3(capsule.Center), ToPxQuat(fixedRot));
-            PxShape* shape = gPhysics->createShape(pxCapsule, *gMaterial);
-            shape->setLocalPose(shapeLocalPose);
-
-            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
-            shape->setSimulationFilterData(fd);
-            shapes.Add(shape);
-        }
-
-        // Convex
-        for (const FKConvexElem& convex : BodySetup->AggGeom.ConvexElems)
-        {
-            PxConvexMeshDesc convexDesc;
-            convexDesc.points.count = convex.VertexData.Num();
-            convexDesc.points.stride = sizeof(PxVec3);
-            convexDesc.points.data = convex.VertexData.GetData();
-            convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
-            
-            PxDefaultMemoryOutputStream buf;
-            
-            if (!gCooking->cookConvexMesh(convexDesc, buf))
-                continue;
-
-            PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-            PxConvexMesh* convexMesh = gPhysics->createConvexMesh(input);
-            
-            PxShape* shape = gPhysics->createShape(PxConvexMeshGeometry(convexMesh), *gMaterial);
-            
-            FVector center(0,0,0);
-            for (const FVector& v : convex.VertexData)
-                center += v;
-            center /= convex.VertexData.Num();
-
-            shape->setLocalPose(PxTransform(ToPxVec3(center)));
-            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All);
-            shape->setSimulationFilterData(fd);
-            shapes.Add(shape);
-        }
-        
-        // 3. 바디 인스턴스 생성
-        FBodyInstance* Instance = new FBodyInstance(this, EBodyType::Dynamic, ToPxVec3(GlobalPose), BodySetup->BoneName);
-        for (PxShape* shape : shapes)
-        {
-            Instance->AttachShape(*shape);
-        }
-        PxRigidBodyExt::updateMassAndInertia(*Instance->RigidDynamicHandle, 1.0f);
-        Instance->RigidActorHandle->userData = (void*)Instance;
-        GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
-        // 4. 결과 벡터에 추가
-        Bodies.Add(Instance);
-    }
-
-    // BodyInstance IndexMap 업데이트
-    GetSkeletalMesh()->GetPhysicsAsset()->UpdateBodySetupIndexMap();
-}
-
-void USkeletalMeshComponent::InstantiatePhysicsAssetConstraints_Internal()
-{
-    Constraints.Empty();
-
-     //PhysicsAsset의 ConstraintSetup 배열 순회
-     for (const UConstraintSetup* ConstraintSetup : GetSkeletalMesh()->GetPhysicsAsset()->ConstraintSetup)
-     {
-         // 1. 부모/자식 바디 찾기
-         FBodyInstance* parentBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName))];
-         FBodyInstance* childBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ChildBoneName))];
-
-         const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
-         
-         int* parentIndex = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName.ToString());
-
-         PxVec3 anchorVec = ToPxVec3(ConstraintSetup->JointElem.Center);
-         PxQuat anchorRot = ToPxQuat(ConstraintSetup->JointElem.Rotation);
-
-         PxTransform anchorTransform = PxTransform(anchorVec, anchorRot);
-         
-         // 2. 조인트 로컬 프레임 계산
-         PxTransform localParent = PxTransform(parentBody->RigidActorHandle->getGlobalPose().getInverse() * anchorTransform);
-         PxTransform localChild  = PxTransform(childBody->RigidActorHandle->getGlobalPose().getInverse() * anchorTransform);
-    
-         // 3. PhysX 조인트 생성
-         PxD6Joint* joint = PxD6JointCreate(*gPhysics, parentBody->RigidActorHandle, localParent, childBody->RigidActorHandle, localChild);
-    
-         // 4. 조인트 제한/설정 적용
-         for (int axis = 0; axis < 6; ++axis)
-         {
-             joint->setMotion(static_cast<PxD6Axis::Enum>(axis), static_cast<PxD6Motion::Enum>(ConstraintSetup->JointElem.AxisMotions[axis]));
-         }
-         joint->setTwistLimit(PxJointAngularLimitPair(
-             ConstraintSetup->JointElem.TwistLimitMin, ConstraintSetup->JointElem.TwistLimitMax));
-         joint->setSwingLimit(PxJointLimitCone(
-             ConstraintSetup->JointElem.SwingLimitMax1, ConstraintSetup->JointElem.SwingLimitMax2));
-    
-         // 5. ConstraintInstance에 저장
-         FConstraintInstance* Instance = new FConstraintInstance(this, ConstraintSetup->JointName, joint);
-         Instance->JointHandle->userData = (void*)Instance;
-
-         Constraints.Add(Instance);
-     }
 }
 
 void USkeletalMeshComponent::ReleaseBodies()
@@ -380,7 +242,6 @@ void USkeletalMeshComponent::SetAnimSequence(UAnimSequence* NewAnimToPlay)
 
 UAnimSequence* USkeletalMeshComponent::GetAnimSequence() const
 {
-
     return GetSingleNodeInstance()->GetCurrentSequence();
 }
 
@@ -438,7 +299,9 @@ void USkeletalMeshComponent::DuplicateSubObjects(const UObject* Source, UObject*
     AnimInstance = Cast<UAnimInstance>(Cast<USkeletalMeshComponent>(Source)->AnimInstance->Duplicate(this));
 }
 
-void USkeletalMeshComponent::PostDuplicate() {}
+void USkeletalMeshComponent::PostDuplicate()
+{
+}
 
 void USkeletalMeshComponent::BeginPlay()
 {
@@ -454,7 +317,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
     if (GEngineLoop.Renderer.GetSkinningMode() == ESkinningType::CPU)
     {
         SkeletalMesh->UpdateSkinnedVertices();
-        bCPUSkinned = true; 
+        bCPUSkinned = true;
     }
     else
     {
@@ -462,7 +325,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
         {
             SkeletalMesh->ResetToOriginalPose();
             bCPUSkinned = false;
-        }   
+        }
     }
 }
 
@@ -658,7 +521,9 @@ void USkeletalMeshComponent::CreateRagdollBones()
         {
             ragBone->offset = PxVec3(0, 0, 0);
             ragBone->halfSize = PxVec3(0.0, 0.0, 0.0);
-            ragBone->offset = PxVec3(Bone.GlobalTransform.GetTranslationVector().X,  Bone.GlobalTransform.GetTranslationVector().Y, Bone.GlobalTransform.GetTranslationVector().Z);
+            ragBone->offset = PxVec3(Bone.GlobalTransform.GetTranslationVector().X,
+                                     Bone.GlobalTransform.GetTranslationVector().Y,
+                                     Bone.GlobalTransform.GetTranslationVector().Z);
         }
         else
         {
@@ -742,7 +607,7 @@ void USkeletalMeshComponent::CreateRagdoll(const PxVec3& worldRoot)
         PxTransform localParent = parent.body->getGlobalPose().getInverse() * PxTransform(anchorPos);
         PxTransform localChild = child.body->getGlobalPose().getInverse() * PxTransform(anchorPos);
 
-        PxD6Joint* joint = PxD6JointCreate(*gPhysics,__IInternetProtocolSinkStackable_INTERFACE_DEFINED__ parent.body, localParent, child.body, localChild);
+        PxD6Joint* joint = PxD6JointCreate(*gPhysics, parent.body, localParent, child.body, localChild);
         joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
         joint->setMotion(PxD6Axis::eSWING1, PxD6Motion::eLIMITED);
         joint->setMotion(PxD6Axis::eSWING2, PxD6Motion::eLIMITED);
@@ -760,7 +625,7 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
 
     const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
     UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
-    PhysicsAsset->BodySetup.Empty(); 
+    PhysicsAsset->BodySetup.Empty();
 
     for (int i = 0; i < Bones.Num(); ++i)
     {
@@ -777,36 +642,208 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
         {
             const FBone& ParentBone = Bones[Bone.ParentIndex];
             const FBone& ChildBone = Bones[i];
-            FVector parentPos = ParentBone.GlobalTransform.GetTranslationVector();
-            FVector childPos = Bone.GlobalTransform.GetTranslationVector();
-            FVector offset = (childPos - parentPos);
+            const FVector parentPos = ParentBone.GlobalTransform.GetTranslationVector();
+            const FVector childPos = ChildBone.GlobalTransform.GetTranslationVector();
+            const FVector offset = childPos - parentPos;
+            const float length = offset.Magnitude();
+            const float radius = FMath::Clamp(length * 0.1f, 0.5f, 3.0f);
+            const float halfHeight = FMath::Max(length * 0.5f - radius, 0.1f);
 
-            float length = offset.Magnitude();
-            float radius = FMath::Clamp(length * 0.1f, 0.5f, 3.0f);
-            float halfHeight = FMath::Max(length * 0.5f - radius, 0.1f);
+            // 2) midpoint
+            const FVector midPoint = ChildBone.LocalTransform.GetTranslationVector() * 0.5;
 
-            // ⬇ 로컬 좌표로 변환
-            FMatrix ChildWorldMatrix = ChildBone.GlobalTransform;
-            FVector localCenter = ChildWorldMatrix.Inverse().TransformPosition((parentPos + childPos) * 0.5f);
-            FVector dir = offset.GetSafeNormal();
-            FQuat localRotation = FQuat(1,0,0,0); // 언리얼식 Z축 기준
+            FVector worldDir = (childPos - parentPos).GetSafeNormal();
 
-            // 3. FKSphylElem 생성
+            // 3) Z축(UpVector) → worldDir 로 회전하는 쿼터니언
+            FQuat worldQuat = FQuat::FindBetweenNormals(FVector::UpVector, worldDir);
+
+            // 3) 로컬 센터 & 로컬 방향
+            
+            // 5) 저장
             FKSphylElem capsule;
             capsule.Radius = radius;
             capsule.Length = halfHeight * 2.0f;
-            capsule.Center = localCenter;
-            capsule.Rotation = localRotation.Rotator(); // local space rotation
-
-            // 4. BodySetup에 추가
+            capsule.Center = midPoint;
+            capsule.Rotation = worldQuat.Rotator();
             BodySetup->AggGeom.SphylElems.Add(capsule);
         }
     }
 }
 
+void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
+{
+    Bodies.Empty();
+    UPhysicsAsset* PhysicsAsset = GetSkeletalMesh()->GetPhysicsAsset();
+    const auto& Bones = GetSkeletalMesh()->GetRenderData().Bones;
+    const auto& RefSkeletal = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal();
 
+    // Unreal 캡슐 축(Z) → PhysX 캡슐 축(X) 변환용 쿼터니언
+    static const FQuat ToX = FQuat::FindBetweenNormals(FVector(0, 0, 1), FVector(1, 0, 0));
 
+    for (const UBodySetup* BodySetup : PhysicsAsset->BodySetup)
+    {
+        // 1) 본 이름 → 본 인덱스
+        int32* pIndex = RefSkeletal->BoneNameToIndexMap.Find(BodySetup->BoneName.ToString());
+        if (!pIndex) continue;
+        int32 BoneIndex = *pIndex;
 
+        FMatrix boneM;
+        // 2) 본 월드 위치
+        if (Bones[BoneIndex].ParentIndex >=0 )
+        {
+            boneM =Bones[Bones[BoneIndex].ParentIndex].GlobalTransform;
+        }
+        else
+            continue;
+        FVector globalPos = Bones[Bones[BoneIndex].ParentIndex].GlobalTransform.GetTranslationVector();
 
+        boneM = boneM* GetWorldMatrix();
+        // 3) 각 Primitive별 PxShape 생성
+        TArray<PxShape*> Shapes;
 
+        // 3a) Spheres
+        for (const FKSphereElem& S : BodySetup->AggGeom.SphereElems)
+        {
+            PxSphereGeometry geo(S.Radius);
+            PxShape* shape = gPhysics->createShape(geo, *gMaterial);
+            shape->setLocalPose(PxTransform(ToPxVec3(S.Center)));
+            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment,
+                                                     FPhysX::ECollisionGroup::All);
+            shape->setSimulationFilterData(fd);
+            Shapes.Add(shape);
+        }
 
+        // 3b) Boxes
+        for (const FKBoxElem& B : BodySetup->AggGeom.BoxElems)
+        {
+            PxBoxGeometry geo(B.X * 0.5f, B.Y * 0.5f, B.Z * 0.5f);
+            PxShape* shape = gPhysics->createShape(geo, *gMaterial);
+            FQuat rot = B.Rotation.ToQuaternion();
+            shape->setLocalPose(
+                PxTransform(ToPxVec3(B.Center), ToPxQuat(rot))
+            );
+            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment,
+                                                     FPhysX::ECollisionGroup::All);
+            shape->setSimulationFilterData(fd);
+            Shapes.Add(shape);
+        }
+
+        // 3c) Capsules
+        for (const FKSphylElem& C : BodySetup->AggGeom.SphylElems)
+        {
+            // PhysX 캡슐은 X축 기준
+            FVector centerWS = boneM.TransformPosition(C.Center);
+            FMatrix LastboneM  = boneM*FMatrix::CreateRotationMatrix(C.Rotation.Roll,C.Rotation.Pitch,C.Rotation.Yaw);
+            // FRotator Rot = LastboneM.GetRotationMatrix();
+            FVector upWS = FMatrix::TransformVector(FVector::UpVector,LastboneM);
+            PxCapsuleGeometry geo(C.Radius, C.Length);
+            // 에셋에 저장된 Unreal(Z축) 회전을 불러와 PhysX(X축)로 변환
+            
+            FQuat unrealRot = FRotator(upWS.X,upWS.Y,upWS.Z).ToQuaternion();//C.Rotation.ToQuaternion();
+            
+            FQuat fixedRot = C.Rotation.ToQuaternion() * ToX ; 
+            PxTransform actorPose(
+        ToPxVec3(centerWS), 
+        ToPxQuat(fixedRot));             // FMatrix → FQuat 변환 함수 가정
+    
+            
+            PxShape* shape = gPhysics->createShape(geo, *gMaterial);
+            shape->setLocalPose(actorPose);
+
+            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment,
+                                                     FPhysX::ECollisionGroup::All);
+            shape->setSimulationFilterData(fd);
+            Shapes.Add(shape);
+        }
+
+        // 3d) Convex Elements
+        for (const FKConvexElem& X : BodySetup->AggGeom.ConvexElems)
+        {
+            PxConvexMeshDesc desc;
+            desc.points.count = X.VertexData.Num();
+            desc.points.stride = sizeof(PxVec3);
+            desc.points.data = X.VertexData.GetData();
+            desc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+
+            PxDefaultMemoryOutputStream buf;
+            if (!gCooking->cookConvexMesh(desc, buf))
+                continue;
+            PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+            PxConvexMesh* mesh = gPhysics->createConvexMesh(input);
+
+            PxShape* shape = gPhysics->createShape(PxConvexMeshGeometry(mesh), *gMaterial);
+
+            // 로컬 센터 계산
+            FVector center(0, 0, 0);
+            for (auto& v : X.VertexData) center += v;
+            center /= X.VertexData.Num();
+
+            shape->setLocalPose(PxTransform(ToPxVec3(center)));
+            PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment,
+                                                     FPhysX::ECollisionGroup::All);
+            shape->setSimulationFilterData(fd);
+            Shapes.Add(shape);
+        }
+
+        // 4) PxRigidDynamic 생성 및 Shape 부착
+        FBodyInstance* Instance = new FBodyInstance(this,
+                                                    EBodyType::Dynamic,
+                                                    ToPxVec3(globalPos),
+                                                    BodySetup->BoneName);
+        for (PxShape* shape : Shapes)
+        {
+            Instance->AttachShape(*shape);
+        }
+        PxRigidBodyExt::updateMassAndInertia(*Instance->RigidDynamicHandle, 1.0f);
+        Instance->RigidActorHandle->userData = (void*)Instance;
+        GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
+
+        // 5) 리스트에 추가
+        Bodies.Add(Instance);
+    }
+}
+
+void USkeletalMeshComponent::InstantiatePhysicsAssetConstraints_Internal()
+{
+    Constraints.Empty();
+
+     //PhysicsAsset의 ConstraintSetup 배열 순회
+     for (const UConstraintSetup* ConstraintSetup : GetSkeletalMesh()->GetPhysicsAsset()->ConstraintSetup)
+     {
+         // 1. 부모/자식 바디 찾기
+         FBodyInstance* parentBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName))];
+         FBodyInstance* childBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ChildBoneName))];
+
+         const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
+         
+         int* parentIndex = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName.ToString());
+
+         PxVec3 anchorVec = ToPxVec3(ConstraintSetup->JointElem.Center);
+         PxQuat anchorRot = ToPxQuat(ConstraintSetup->JointElem.Rotation);
+
+         PxTransform anchorTransform = PxTransform(anchorVec, anchorRot);
+         
+         // 2. 조인트 로컬 프레임 계산
+         PxTransform localParent = PxTransform(parentBody->RigidActorHandle->getGlobalPose().getInverse() * anchorTransform);
+         PxTransform localChild  = PxTransform(childBody->RigidActorHandle->getGlobalPose().getInverse() * anchorTransform);
+    
+         // 3. PhysX 조인트 생성
+         PxD6Joint* joint = PxD6JointCreate(*gPhysics, parentBody->RigidActorHandle, localParent, childBody->RigidActorHandle, localChild);
+    
+         // 4. 조인트 제한/설정 적용
+         for (int axis = 0; axis < 6; ++axis)
+         {
+             joint->setMotion(static_cast<PxD6Axis::Enum>(axis), static_cast<PxD6Motion::Enum>(ConstraintSetup->JointElem.AxisMotions[axis]));
+         }
+         joint->setTwistLimit(PxJointAngularLimitPair(
+             ConstraintSetup->JointElem.TwistLimitMin, ConstraintSetup->JointElem.TwistLimitMax));
+         joint->setSwingLimit(PxJointLimitCone(
+             ConstraintSetup->JointElem.SwingLimitMax1, ConstraintSetup->JointElem.SwingLimitMax2));
+    
+         // 5. ConstraintInstance에 저장
+         FConstraintInstance* Instance = new FConstraintInstance(this, ConstraintSetup->JointName, joint);
+         Instance->JointHandle->userData = (void*)Instance;
+
+         Constraints.Add(Instance);
+     }
+}
