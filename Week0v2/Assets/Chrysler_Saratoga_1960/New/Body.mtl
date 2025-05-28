@@ -1,7 +1,7 @@
 # Blender 4.3.2 MTL File: 'None'
 # www.blender.org
 
-newmtl Body.003
+newmtl Body.001
 Ka 1.000000 1.000000 1.000000
 Ks 0.000000 0.000000 0.000000
 Ke 0.000000 0.000000 0.000000
@@ -12,7 +12,7 @@ map_Kd textures/Body_Base_Color.png
 map_Ns textures/Body_Roughness.png
 map_refl textures/Body_Metallic.png
 
-newmtl Glass.003
+newmtl Glass.001
 Ka 1.000000 1.000000 1.000000
 Ks 0.000000 0.000000 0.000000
 Ke 0.000000 0.000000 0.000000

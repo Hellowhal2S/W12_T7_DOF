@@ -41,6 +41,7 @@
 #include <Animation/CustomAnimInstance/TestAnimInstance.h>
 #include <Animation/AnimSingleNodeInstance.h>
 
+#include "Actors/AVehicleActor.h"
 #include "Actors/ParticleActor.h"
 #include "Particles/ParticleEmitter.h"
 #include "Particles/ParticleLODLevel.h"

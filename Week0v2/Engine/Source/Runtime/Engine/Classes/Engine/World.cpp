@@ -19,6 +19,7 @@
 #include "UObject/UObjectArray.h"
 #include "UnrealEd/PrimitiveBatch.h"
 #include "Physics/Car/VehicleManager.h"
+#include "Physics/Car/SnippetVehicleCreate.h"
 
 UWorld::UWorld(const UWorld& Other): UObject(Other)
                                    , defaultMapName(Other.defaultMapName)
@@ -39,7 +40,6 @@ void UWorld::InitWorld()
 
     // PhysicsScene 초기화
     InitPhysicsScene();
-    
     
     if (WorldType == EWorldType::Editor)
     {
@@ -75,60 +75,60 @@ void UWorld::InitPhysicsScene()
 
     PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();
         
-    PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 0, 1, 0), *gMaterial);
-    PxShape* planeShape;
-    GroundPlane->getShapes(&planeShape, 1);
-    planeShape->setSimulationFilterData(FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::All));
-    PxFilterData QryFilterData;
-    QryFilterData.word3 = 0; // FPhysX::InitVehicleSDK에서 설정한 기본 지면 타입 ID (0)
-    planeShape->setQueryFilterData(QryFilterData);
-    GroundPlane->setName("GroundPlane");
-    gScene->addActor(*GroundPlane);
+    // PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 0, 1, 0), *gMaterial);
+    // PxShape* planeShape;
+    // GroundPlane->getShapes(&planeShape, 1);
+    // planeShape->setSimulationFilterData(FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::VehicleBody | FPhysX::ECollisionGroup::VehicleWheel));
+    // PxFilterData QryFilterData;
+    // QryFilterData.word3 = 0; // FPhysX::InitVehicleSDK에서 설정한 기본 지면 타입 ID (0)
+    // planeShape->setQueryFilterData(QryFilterData);
+    // GroundPlane->setName("GroundPlane");
+    // gScene->addActor(*GroundPlane);
 
-    FGameObject FallingBox = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
-    if (auto* rigidDynamic = FallingBox.rigidBody->is<physx::PxRigidDynamic>())
-    {
-        rigidDynamic->setAngularDamping(0.5f);
-        rigidDynamic->setLinearDamping (0.5f);
-        rigidDynamic->setMass          (10.0f);
-    }
-    FallingBox.rigidBody->setName("FallingBox");
-    FallingBox.scene = gScene;
-    gObjects.push_back(FallingBox);
-        
-    FGameObject BigBox = CreateBox(PxVec3(0, 0, 1),
-                                   PxVec3(100, 100, 1),
-                                   FPhysX::EActorType::Static);
-    if (auto* rigidDynamic = BigBox.rigidBody->is<physx::PxRigidDynamic>())
-    {
-        rigidDynamic->setAngularDamping(0.5f);
-        rigidDynamic->setLinearDamping (0.5f);
-        rigidDynamic->setMass          (10.0f);
-    }
-    BigBox.rigidBody->setName("BigBox");
-    BigBox.scene = gScene;
-    gObjects.push_back(BigBox);
+    PxRigidStatic* plane = snippetvehicle::createDrivablePlane(
+    FPhysX::MakeFilterData(
+            FPhysX::ECollisionGroup::Environment,
+            FPhysX::ECollisionGroup::VehicleBody | FPhysX::ECollisionGroup::VehicleWheel
+        ),
+        gMaterial,
+        gPhysics
+    );
+    gScene->addActor(*plane);
     
-    FGameObject TriggerBox = CreateBox(
-                PxVec3(0, 0, 20),
-            PxVec3(5, 5, 1),
-                    FPhysX::EActorType::Static,
-                    PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE);
-    TriggerBox.rigidBody->setName("TriggerBox");
-    TriggerBox.scene = gScene;
-    gObjects.push_back(TriggerBox);
-
-    // Init Vehicle Manager
     VehicleManager = new class VehicleManager(gScene);
-    if (VehicleManager)
-    {
-        VehicleManager->InitVehicleSetupData();
 
-        // Create Player Car
-        PxTransform InitialVehiclePose(PxVec3(0.f, 5.f, 2.f));
-        VehicleManager->CreatePlayerVehicle(InitialVehiclePose);
-    }
-
+    // FGameObject FallingBox = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
+    // if (auto* rigidDynamic = FallingBox.rigidBody->is<physx::PxRigidDynamic>())
+    // {
+    //     rigidDynamic->setAngularDamping(0.5f);
+    //     rigidDynamic->setLinearDamping (0.5f);
+    //     rigidDynamic->setMass          (10.0f);
+    // }
+    // FallingBox.rigidBody->setName("FallingBox");
+    // FallingBox.scene = gScene;
+    // gObjects.push_back(FallingBox);
+    //     
+    // FGameObject BigBox = CreateBox(PxVec3(0, 0, 1),
+    //                                PxVec3(100, 100, 1),
+    //                                FPhysX::EActorType::Static);
+    // if (auto* rigidDynamic = BigBox.rigidBody->is<physx::PxRigidDynamic>())
+    // {
+    //     rigidDynamic->setAngularDamping(0.5f);
+    //     rigidDynamic->setLinearDamping (0.5f);
+    //     rigidDynamic->setMass          (10.0f);
+    // }
+    // BigBox.rigidBody->setName("BigBox");
+    // BigBox.scene = gScene;
+    // gObjects.push_back(BigBox);
+    //
+    // FGameObject TriggerBox = CreateBox(
+    //             PxVec3(0, 0, 20),
+    //         PxVec3(5, 5, 1),
+    //                 FPhysX::EActorType::Static,
+    //                 PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE);
+    // TriggerBox.rigidBody->setName("TriggerBox");
+    // TriggerBox.scene = gScene;
+    // gObjects.push_back(TriggerBox);
     printf("Init Physics Scene\n");
 }
 
@@ -183,14 +183,9 @@ void UWorld::Simulate(float dt)
     for (auto& obj : gObjects)
         obj.UpdateFromPhysics();
 
-    if (VehicleManager)
+    if (VehicleManager && VehicleManager->GetVehicleActorSize() > 0)
     {
-        // float accel = GetInputAxisValue("MoveForward");
-        // float brake = GetInputAxisValue("Brake");
-        // float steer = GetInputAxisValue("MoveRight");
-        // bool handbrake = IsInputActionPressed("Handbrake");
-        // VehicleManager->UpdatePlayerVehicleInput(accel, brake, steer, handbrake);
-        //VehicleManager->UpdateAllVehicles(dt);
+        VehicleManager->UpdateAllVehicles(dt);
     }
 }
 
@@ -482,9 +477,9 @@ void UWorld::BeginPlay()
         
         if (bCharacterExist == false)
         {
-            ACharacter* Character = SpawnActor<ACharacter>();
-            PlayerController->Possess(Character);
-            Character->SetActorScale(FVector(0.2f, 0.2f, 0.2f));
+            // ACharacter* Character = SpawnActor<ACharacter>();
+            // PlayerController->Possess(Character);
+            // Character->SetActorScale(FVector(0.2f, 0.2f, 0.2f));
         }
         
         APlayerCameraManager* PlayerCameraManager = SpawnActor<APlayerCameraManager>();

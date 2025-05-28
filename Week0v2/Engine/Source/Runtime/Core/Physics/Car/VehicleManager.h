@@ -3,6 +3,7 @@
 #include <vehicle/PxVehicleDrive4W.h>
 #include <vehicle/PxVehicleUtil.h>
 
+class AVehicleActor;
 // SnippetVehicleSceneQuery.h 와 유사한 기능을 할 구조체/클래스
 // 여기서는 Snippet의 VehicleSceneQueryData를 직접 사용하지 않고, 필요한 멤버만 가져온다고 가정
 struct VehicleSuspensionRaycastData
@@ -55,18 +56,19 @@ public:
     VehicleManager(PxScene* scene);
     ~VehicleManager();
 
-    bool InitVehicleSetupData(); // WheelsSimData, DriveSimData 등 설정
-    void ReleaseVehicleSetupData();
-
-    bool CreatePlayerVehicle(const PxTransform& initialPose);
+    int GetVehicleActorSize() { return VehicleActors.Num(); }
+    void AddVehicleActor(AVehicleActor* Vehicle) { VehicleActors.Add(Vehicle); }
+    
+    PxScene* GetPxScene() { return PxScene; }
     VehicleInstance* GetPlayerVehicle() { return PlayerVehicleInstance.vehicle ? &PlayerVehicleInstance : nullptr; }
 
-    void UpdatePlayerVehicleInput(float accel, float brake, float steer, bool handbrake);
     void UpdateAllVehicles(float dt);
-
+    void UpdatePlayerVehicleInput(float accel, float brake, float steer, bool handbrake);
+    
 private:
     PxScene* PxScene = nullptr;
     PxPhysics* PxPhysics = nullptr;
+    PxCooking* PxCooking = nullptr;
     PxMaterial* DefaultMaterial = nullptr;
 
     // 차량 설정 데이터
@@ -86,6 +88,5 @@ private:
     PxVehicleKeySmoothingData KeySmoothingData;
     bool MimicKeyInputs = false;
 
-    bool SetupSuspensionRaycast();
-    void ReleaseSuspensionRaycast();
+    TArray<AVehicleActor*> VehicleActors;
 };

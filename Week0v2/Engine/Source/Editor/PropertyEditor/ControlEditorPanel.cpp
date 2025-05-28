@@ -15,6 +15,7 @@
 
 #include "LaunchEngineLoop.h"
 #include "ShowFlags.h"
+#include "Actors/AVehicleActor.h"
 #include "Actors/ParticleActor.h"
 #include "Engine/FBXLoader.h"
 #include "Actors/SkeletalMeshActor.h"
@@ -91,7 +92,7 @@ void ControlEditorPanel::Render()
     CreateShaderHotReloadButton(IconSize);
 
     ImGui::SameLine();
-    
+
     auto PIEIconSize = ImVec2(IconSize.x + 8, IconSize.y);
     ImGui::PushFont(IconFont);
     CreatePIEButton(PIEIconSize);
@@ -135,7 +136,7 @@ void ControlEditorPanel::CreateMenuButton(const ImVec2 ButtonSize, ImFont* IconF
 
         if (ImGui::MenuItem("Load Scene"))
         {
-            char const* lFilterPatterns[1] = { "*.scene" };
+            char const* lFilterPatterns[1] = {"*.scene"};
             const char* FileName = tinyfd_openFileDialog("Open Scene File", "Assets/Scenes", 1, lFilterPatterns, "Scene(.scene) file", 0);
 
             if (FileName == nullptr)
@@ -151,7 +152,7 @@ void ControlEditorPanel::CreateMenuButton(const ImVec2 ButtonSize, ImFont* IconF
 
         if (ImGui::MenuItem("Save Scene"))
         {
-            char const* lFilterPatterns[1] = { "*.scene" };
+            char const* lFilterPatterns[1] = {"*.scene"};
             const char* FileName = tinyfd_saveFileDialog("Save Scene File", "Assets/Scenes", 1, lFilterPatterns, "Scene(.scene) file");
 
             if (FileName == nullptr)
@@ -177,7 +178,7 @@ void ControlEditorPanel::CreateMenuButton(const ImVec2 ButtonSize, ImFont* IconF
         {
             if (ImGui::MenuItem("Wavefront (.obj)"))
             {
-                char const* lFilterPatterns[1] = { "*.obj" };
+                char const* lFilterPatterns[1] = {"*.obj"};
                 const char* FileName = tinyfd_openFileDialog("Open OBJ File", "", 1, lFilterPatterns, "Wavefront(.obj) file", 0);
 
                 if (FileName != nullptr)
@@ -193,7 +194,7 @@ void ControlEditorPanel::CreateMenuButton(const ImVec2 ButtonSize, ImFont* IconF
 
             if (ImGui::MenuItem("FBX (.fbx)"))
             {
-                char const* lFilterPatterns[1] = { "*.fbx" };
+                char const* lFilterPatterns[1] = {"*.fbx"};
                 const char* FileName = tinyfd_openFileDialog("Open FBX File", "", 1, lFilterPatterns, "FBX(.fbx) file", 0);
 
                 if (FileName != nullptr)
@@ -206,7 +207,7 @@ void ControlEditorPanel::CreateMenuButton(const ImVec2 ButtonSize, ImFont* IconF
                     }
                 }
             }
-            
+
             ImGui::EndMenu();
         }
 
@@ -230,7 +231,10 @@ void ControlEditorPanel::CreateMenuButton(const ImVec2 ButtonSize, ImFont* IconF
             /* Move Cursor X Position */
             ImGui::SetCursorPosX(ContentWidth - (160.f + 10.0f));
 
-            if (ImGui::Button("OK", ImVec2(80, 0))) { PostQuitMessage(0); }
+            if (ImGui::Button("OK", ImVec2(80, 0)))
+            {
+                PostQuitMessage(0);
+            }
 
             ImGui::SameLine();
 
@@ -239,7 +243,10 @@ void ControlEditorPanel::CreateMenuButton(const ImVec2 ButtonSize, ImFont* IconF
             ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::HSV(0.0f, 1.0f, 1.0f)));
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, static_cast<ImVec4>(ImColor::HSV(0.0f, 0.9f, 1.0f)));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, static_cast<ImVec4>(ImColor::HSV(0.0f, 1.0f, 1.0f)));
-            if (ImGui::Button("Cancel", ImVec2(80, 0))) { ImGui::CloseCurrentPopup(); }
+            if (ImGui::Button("Cancel", ImVec2(80, 0)))
+            {
+                ImGui::CloseCurrentPopup();
+            }
             ImGui::PopStyleColor(3);
             ImGui::PopID();
 
@@ -258,7 +265,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
     {
         return;
     }
-    
+
     ImGui::PushFont(IconFont);
     if (ImGui::Button(ICON_SLIDER, ButtonSize)) // Slider
     {
@@ -317,7 +324,8 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
 
     if (ImGui::BeginPopup("ActorControl"))
     {
-        struct Actor {
+        struct Actor
+        {
             const char* Category;
             const char* Label;
             int Obj;
@@ -325,26 +333,27 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
 
         // 카테고리 순서대로 정렬된 배열
         static const Actor Actors[] = {
-            { "Defaults", "Actor", OBJ_ACTOR},
-            { "Defaults", "GamePlayer", OBJ_GAMEPLAYER},
+            {"Defaults", "Actor", OBJ_ACTOR},
+            {"Defaults", "GamePlayer", OBJ_GAMEPLAYER},
             // 🔦 라이트
-            { "Lights", "Spot Light",      OBJ_SPOTLIGHT },
-            { "Lights", "Point Light",     OBJ_POINTLIGHT },
-            { "Lights", "Directional Light", OBJ_DIRECTIONALLIGHT },
+            {"Lights", "Spot Light", OBJ_SPOTLIGHT},
+            {"Lights", "Point Light", OBJ_POINTLIGHT},
+            {"Lights", "Directional Light", OBJ_DIRECTIONALLIGHT},
 
             // 🔷 셰이프
-            { "Shapes", "Cube",            OBJ_CUBE },
-            { "Shapes", "Sphere",          OBJ_SPHERE },
-            { "Shapes", "Capsule",         OBJ_CAPSULE },
-            { "Shapes", "Car (Dodge)",     OBJ_CAR },
-            { "Shapes", "SkySphere",       OBJ_SKYSPHERE},
-            { "Shapes", "SkeletalMesh",    OBJ_SKELETAL},
-            {"Shapes", "Character",           OBJ_CHARACTER},
+            {"Shapes", "Cube", OBJ_CUBE},
+            {"Shapes", "Sphere", OBJ_SPHERE},
+            {"Shapes", "Capsule", OBJ_CAPSULE},
+            {"Shapes", "Car (Dodge)", OBJ_CAR},
+            {"Shapes", "Vehicle (PhysX)", OBJ_VEHICLE},
+            {"Shapes", "SkySphere", OBJ_SKYSPHERE},
+            {"Shapes", "SkeletalMesh", OBJ_SKELETAL},
+            {"Shapes", "Character", OBJ_CHARACTER},
 
             // ✨ 효과
-            { "Effects", "Particle",       OBJ_PARTICLE },
-            { "Effects", "Text",           OBJ_TEXT },
-            { "Effects", "Fog",            OBJ_FOG },
+            {"Effects", "Particle", OBJ_PARTICLE},
+            {"Effects", "Text", OBJ_TEXT},
+            {"Effects", "Fog", OBJ_FOG},
         };
 
         const char* CurrentCategory = nullptr;
@@ -373,14 +382,14 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
 
                 switch (static_cast<EObjects>(Obj))
                 {
-                    case OBJ_ACTOR:
+                case OBJ_ACTOR:
                     {
                         SpawnedActor = World->SpawnActor<AActor>();
                         SpawnedActor->SetActorLabel(TEXT("OBJ_ACTOR"));
                         SpawnedActor->AddComponent<USceneComponent>(EComponentOrigin::Editor);
                         break;
                     }
-                    case OBJ_GAMEPLAYER:
+                case OBJ_GAMEPLAYER:
                     {
                         SpawnedActor = World->SpawnActor<AGPlayer>();
                         SpawnedActor->SetActorLabel(TEXT("OBJ_GAMEPLAYER"));
@@ -395,8 +404,8 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         SpawnedActor->AddComponent<UBoxShapeComponent>(EComponentOrigin::Editor);
                         break;
                     }
-                    //  셰이프
-                    case OBJ_CUBE:
+                //  셰이프
+                case OBJ_CUBE:
                     {
                         AStaticMeshActor* TempActor = World->SpawnActor<AStaticMeshActor>();
                         TempActor->SetActorLabel(TEXT("Cube"));
@@ -407,7 +416,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         SpawnedActor = TempActor;
                         break;
                     }
-                    case OBJ_SPHERE:
+                case OBJ_SPHERE:
                     {
                         AStaticMeshActor* TempActor = World->SpawnActor<AStaticMeshActor>();
                         TempActor->SetActorLabel(TEXT("Sphere"));
@@ -418,7 +427,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         SpawnedActor = TempActor;
                         break;
                     }
-                    case OBJ_CAPSULE:
+                case OBJ_CAPSULE:
                     {
                         AStaticMeshActor* TempActor = World->SpawnActor<AStaticMeshActor>();
                         TempActor->SetActorLabel(TEXT("Capsule"));
@@ -429,7 +438,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         SpawnedActor = TempActor;
                         break;
                     }
-                    case OBJ_SKYSPHERE:
+                case OBJ_SKYSPHERE:
                     {
                         AStaticMeshActor* TempActor = World->SpawnActor<AStaticMeshActor>();
                         TempActor->SetActorLabel(TEXT("OBJ_SKYSPHERE"));
@@ -449,7 +458,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
 
                         break;
                     }
-                    case OBJ_SKELETAL:
+                case OBJ_SKELETAL:
                     {
                         SpawnedActor = World->SpawnActor<ASkeletalMeshActor>();
                         Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->SetData("Contents/FBX/Rumba_Dancing.fbx");
@@ -457,41 +466,41 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         SpawnedActor->SetActorLabel("SkeletalMesh");
                         break;
                     }
-                    case OBJ_CHARACTER:
-                        {
-                            ACharacter* Character = World->SpawnActor<ACharacter>();
-                            Character->SetActorLabel(TEXT("Character"));
-                            break;
-                        }
-                    case OBJ_POINTLIGHT:
+                case OBJ_CHARACTER:
+                    {
+                        ACharacter* Character = World->SpawnActor<ACharacter>();
+                        Character->SetActorLabel(TEXT("Character"));
+                        break;
+                    }
+                case OBJ_POINTLIGHT:
                     {
                         SpawnedActor = World->SpawnActor<APointLightActor>();
                         SpawnedActor->SetActorLabel(TEXT("OBJ_POINTLIGHT"));
                         break;
                     }
-                    case OBJ_SPOTLIGHT:
+                case OBJ_SPOTLIGHT:
                     {
                         SpawnedActor = World->SpawnActor<ASpotLightActor>();
                         SpawnedActor->SetActorLabel(TEXT("OBJ_SpotLight"));
                         break;
                     }
-                    case OBJ_DIRECTIONALLIGHT:
+                case OBJ_DIRECTIONALLIGHT:
                     {
                         SpawnedActor = World->SpawnActor<ADirectionalLightActor>();
                         SpawnedActor->SetActorLabel(TEXT("OBJ_DIRECTIONALLIGHT"));
                         break;
                     }
 
-                    // ✨ 효과
-                    case OBJ_PARTICLE:
+                // ✨ 효과
+                case OBJ_PARTICLE:
                     {
                         SpawnedActor = World->SpawnActor<AParticleActor>();
-                        if (AParticleActor* ParticleActor = Cast<AParticleActor>(SpawnedActor)) 
+                        if (AParticleActor* ParticleActor = Cast<AParticleActor>(SpawnedActor))
                         {
                             ParticleActor->SetDefaultParticleSystem();
                         }
                         SpawnedActor->SetActorLabel(TEXT("OBJ_PARTICLE"));
-                            SpawnedActor->SetTickInEditor(true);
+                        SpawnedActor->SetTickInEditor(true);
                         // UParticleSubUVComp* Particle = SpawnedActor->AddComponent<UParticleSubUVComp>(EComponentOrigin::Editor);
                         // Particle->SetTexture(L"Assets/Texture/T_Explosion_SubUV.png");
                         // Particle->SetRowColumnCount(6, 6);
@@ -499,7 +508,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         // Particle->Activate();
                         break;
                     }
-                    case OBJ_TEXT:
+                case OBJ_TEXT:
                     {
                         SpawnedActor = World->SpawnActor<AActor>();
                         SpawnedActor->SetActorLabel(TEXT("OBJ_TEXT"));
@@ -509,7 +518,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         Text->SetText(L"안녕하세요 Jungle 1");
                         break;
                     }
-                    case OBJ_FOG:
+                case OBJ_FOG:
                     {
                         for (const auto& ExponentialHeightFogActor : TObjectRange<AExponentialHeightFogActor>())
                         {
@@ -521,7 +530,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                                 }
                                 ExponentialHeightFogActor->Destroy();
                                 TSet<AActor*> SelectedActors = World->GetSelectedActors();
-                                if(SelectedActors.Contains(ExponentialHeightFogActor))
+                                if (SelectedActors.Contains(ExponentialHeightFogActor))
                                 {
                                     World->ClearSelectedActors();
                                 }
@@ -531,31 +540,58 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         SpawnedActor->SetActorLabel(TEXT("OBJ_FOG"));
                         break;
                     }
-                    case OBJ_CAR:
+                case OBJ_CAR:
                     {
                         AStaticMeshActor* TempActor = World->SpawnActor<AStaticMeshActor>();
                         TempActor->SetActorLabel(TEXT("OBJ_DODGE"));
                         UStaticMeshComponent* MeshComp = TempActor->GetStaticMeshComponent();
-
-                        // FManagerOBJ::CreateStaticMesh("Assets/Tesla_Cybertruck/Tesla_Cybertruck.obj");
-                        // MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Tesla_Cybertruck.obj"));
-                        
-                        // FManagerOBJ::CreateStaticMesh("Assets/Chrysler_Saratoga_1960/Chrysler_Saratoga_1960.obj");
-                        // MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Chrysler_Saratoga_1960.obj"));
-                            
-                        //FManagerOBJ::CreateStaticMesh("Assets/Avent_sport/Avent_sport.obj");
-                        //MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Avent_sport.obj"));
-                            
-                        FManagerOBJ::CreateStaticMesh("Assets/VAZ2101_Rat/VAZ2101_Rat.obj");
-                        MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"VAZ2101_Rat.obj"));
-                            
-                        // FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
-                        // MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
+                        FManagerOBJ::CreateStaticMesh("Assets/Dodge/Dodge.obj");
+                        MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Dodge.obj"));
                         SpawnedActor = TempActor;
                         break;
                     }
-                    default:
-                        break;
+                case OBJ_VEHICLE:
+                    {
+                        AVehicleActor* VehicleActor = World->SpawnActor<AVehicleActor>();
+                        VehicleActor->SetActorLabel(TEXT("OBJ_VEHICLE"));
+                        UStaticMeshComponent* BodyMeshComp = VehicleActor->GetStaticMeshComponent();
+                        FManagerOBJ::CreateStaticMesh("Assets/Chrysler_Saratoga_1960/New/Body.obj");
+                        BodyMeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Body.obj"));
+                        BodyMeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 40.0f));
+                        BodyMeshComp->SetFName(TEXT("Body"));
+                        for (int i = 0; i < 4; i++)
+                            VehicleActor->AddComponent<UStaticMeshComponent>(EComponentOrigin::Editor);
+
+                        TArray<FVector> TireLocations = {
+                            FVector(154.50f, -80.20f, 26.90f),
+                            FVector(154.50f, 70.0f, 27.1f),
+                            FVector(-163.8f, -80.20f, 26.9f),
+                            FVector(-163.8f, 70.0f, 27.1f),
+                        };
+                        
+                        for (int i=0; i<BodyMeshComp->GetAttachChildren().Len(); i++)
+                        {
+                            UStaticMeshComponent* TireMeshComp = Cast<UStaticMeshComponent>(BodyMeshComp->GetAttachChildren()[i]);
+                            TireMeshComp->SetRelativeLocation(TireLocations[i]);
+                            TireMeshComp->SetRelativeScale(FVector(70.0f, 70.0f, 70.0f));
+                            UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(TireMeshComp);
+                            FManagerOBJ::CreateStaticMesh("Assets/Primitives/Sphere.obj");
+                            StaticMeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Sphere.obj"));
+                            StaticMeshComp->SetFName(TEXT("TireMesh_") + FString::FromInt(i));
+                        }
+
+                        VehicleActor->CreateVehicle();
+                        //FManagerOBJ::CreateStaticMesh("Assets/Avent_sport/Avent_sport.obj");
+                        //MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Avent_sport.obj"));
+
+                        // FManagerOBJ::CreateStaticMesh("Assets/VAZ2101_Rat/VAZ2101_Rat.obj");
+                        // MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"VAZ2101_Rat.obj"));
+
+                        // FManagerOBJ::CreateStaticMesh("Assets/Tesla_Cybertruck/Tesla_Cybertruck.obj");
+                        // MeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Tesla_Cybertruck.obj"));
+                    }
+                default:
+                    break;
                 }
 
                 if (SpawnedActor)
@@ -578,7 +614,7 @@ void ControlEditorPanel::CreateFlagButton() const
     }
     const auto ActiveViewport = EditorEngine->GetLevelEditor()->GetActiveViewportClient();
 
-    const char* ViewTypeNames[] = { "Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back" };
+    const char* ViewTypeNames[] = {"Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back"};
     const ELevelViewportType ActiveViewType = ActiveViewport->GetViewportType();
     FString TextViewType = ViewTypeNames[ActiveViewType];
 
@@ -608,7 +644,7 @@ void ControlEditorPanel::CreateFlagButton() const
 
     ImGui::SameLine();
 
-    const char* ViewModeNames[] = { "Goroud_Lit", "Lambert_Lit", "Phong_Lit", "Unlit", "Wireframe", "Depth", "Normal"};
+    const char* ViewModeNames[] = {"Goroud_Lit", "Lambert_Lit", "Phong_Lit", "Unlit", "Wireframe", "Depth", "Normal"};
     FString SelectLightControl = ViewModeNames[static_cast<uint32>(ActiveViewport->GetViewMode())];
     const ImVec2 LightTextSize = ImGui::CalcTextSize(GetData(SelectLightControl));
 
@@ -643,7 +679,7 @@ void ControlEditorPanel::CreateFlagButton() const
         ImGui::OpenPopup("ShowControl");
     }
 
-    const char* Items[] = { "AABB", "Primitive", "BillBoard", "UUID", "Fog", "SkeletalMesh", "Particle" };
+    const char* Items[] = {"AABB", "Primitive", "BillBoard", "UUID", "Fog", "SkeletalMesh", "Particle"};
     const uint64 ActiveViewportFlags = ActiveViewport->GetShowFlag();
 
     if (ImGui::BeginPopup("ShowControl"))
@@ -657,7 +693,7 @@ void ControlEditorPanel::CreateFlagButton() const
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_Fog)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_SkeletalMesh)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_Particles)) != 0
-        };  // 각 항목의 체크 상태 저장
+        }; // 각 항목의 체크 상태 저장
 
         for (int ItemIndex = 0; ItemIndex < IM_ARRAYSIZE(Items); ItemIndex++)
         {
@@ -669,7 +705,7 @@ void ControlEditorPanel::CreateFlagButton() const
 
     ImGui::SameLine();
 
-    const char* SkinningModeNames[] = { "CPU_Skinning", "GPU_Skinning" };
+    const char* SkinningModeNames[] = {"CPU_Skinning", "GPU_Skinning"};
     FString SelectSkinningControl = SkinningModeNames[static_cast<uint32>(GEngineLoop.Renderer.GetSkinningMode())];
     const ImVec2 SkinningTextSize = ImGui::CalcTextSize(GetData(SelectSkinningControl));
 
@@ -769,7 +805,7 @@ void ControlEditorPanel::CreateSRTButton(const ImVec2 ButtonSize) const
     {
         return;
     }
-    
+
     SLevelEditor* LevelEditor = EditorEngine->GetLevelEditor();
 
     constexpr auto ActiveColor = ImVec4(0.00f, 0.00f, 0.85f, 1.0f);

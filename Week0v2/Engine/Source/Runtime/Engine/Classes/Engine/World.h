@@ -146,12 +146,12 @@ public:
 public:
     /** Returns a pointer to the physics scene for this world. */
     PxScene* GetPhysicsScene() const { return gScene; }
+    VehicleManager* VehicleManager;
     
 private:
     PxScene* gScene;
     PxDefaultCpuDispatcher* gDispatcher;
     std::vector<FGameObject> gObjects;
-    VehicleManager* VehicleManager;
     
 public:
     // serialize

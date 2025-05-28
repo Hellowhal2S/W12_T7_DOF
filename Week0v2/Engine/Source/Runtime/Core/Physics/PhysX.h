@@ -2,8 +2,10 @@
 
 #include <PxPhysicsAPI.h>
 #include "PhysXCallback.h"
+#include "UserInterface/Console.h"
 #include "vehicle/PxVehicleSDK.h"
 
+enum class LogLevel;
 struct FVector;
 using namespace physx;
 
@@ -11,6 +13,7 @@ extern PxDefaultAllocator      gAllocator;
 extern PxDefaultErrorCallback  gErrorCallback;
 extern PxFoundation*           gFoundation;
 extern PxPhysics*              gPhysics;
+extern PxCooking*              gCooking;
 extern PxPvd*                  gPvd;
 extern PxPvdTransport*         gTransport;
 extern PxMaterial*             gMaterial;
@@ -31,7 +34,9 @@ struct FPhysX
         Enemy       = (1<<2),
         Environment = (1<<3),
         BoxCollider = (1<<4),
-        All         = Default | Player | Enemy | Environment | BoxCollider
+        VehicleBody = (1<<5),
+        VehicleWheel = (1<<6),
+        All         = Default | Player | Enemy | Environment | BoxCollider | VehicleBody | VehicleWheel
     };
 
     static PxFilterData MakeFilterData(
@@ -86,6 +91,19 @@ struct FPhysX
             printf("fail : PVD connect() \n");
         }
         gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, gPvd);
+
+        PxTolerancesScale scale = gPhysics->getTolerancesScale();
+        PxCookingParams cookParams(scale);
+        // (선택) 메시 전처리 플래그 설정
+        cookParams.meshPreprocessParams |= PxMeshPreprocessingFlag::eWELD_VERTICES;
+        cookParams.buildGPUData       = true;
+        gCooking = PxCreateCooking(PX_PHYSICS_VERSION, *gFoundation, cookParams);
+        if (!gCooking)
+        {
+            UE_LOG(LogLevel::Display, TEXT("PxCreateCooking failed!"));
+            return;
+        }
+
         gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
 
         if (!InitVehicleSDK())
@@ -129,3 +147,12 @@ private:
         return true;
     }
 };
+
+inline FPhysX::ECollisionGroup operator|(
+    FPhysX::ECollisionGroup a,
+    FPhysX::ECollisionGroup b
+) {
+    return static_cast<FPhysX::ECollisionGroup>(
+        static_cast<PxU32>(a) | static_cast<PxU32>(b)
+    );
+}
