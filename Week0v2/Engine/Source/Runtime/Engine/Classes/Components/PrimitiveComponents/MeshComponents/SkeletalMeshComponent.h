@@ -124,6 +124,7 @@ private:
     void CreateRagdollBones();
     void CreateRagdoll(const PxVec3& worldRoot);
     void CreateRagedollBodySetUp();
+    void CreateRagdollConstrinatSetup();
 
 private:
     TArray<UStaticMeshComponent*> BoneComponents;

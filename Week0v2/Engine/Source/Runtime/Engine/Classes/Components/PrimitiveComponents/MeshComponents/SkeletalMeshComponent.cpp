@@ -154,9 +154,8 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* value)
     AABB = SkeletalMesh->GetRenderData().BoundingBox;
 
     // CreateBoneComponents();
-    // CreateRagdollBones();
-    // CreateRagdoll(PxVec3(0, 0, 100));
-    CreateRagedollBodySetUp();
+    // CreateRagedollBodySetUp();
+    // CreateRagdollConstrinatSetup();
 }
 
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
@@ -670,6 +669,11 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
     }
 }
 
+void USkeletalMeshComponent::CreateRagdollConstrinatSetup()
+{
+    
+}
+
 void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
 {
     Bodies.Empty();
@@ -811,6 +815,11 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetConstraints_Internal()
      for (const UConstraintSetup* ConstraintSetup : GetSkeletalMesh()->GetPhysicsAsset()->ConstraintSetup)
      {
          // 1. 부모/자식 바디 찾기
+         if (*GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName) == INDEX_NONE
+             || *GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ChildBoneName) == INDEX_NONE)
+         {
+             continue;
+         }
          FBodyInstance* parentBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName))];
          FBodyInstance* childBody = Bodies[*(GetSkeletalMesh()->GetPhysicsAsset()->BodySetupIndexMap.Find(ConstraintSetup->JointElem.ChildBoneName))];
 

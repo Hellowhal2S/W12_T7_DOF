@@ -37,6 +37,7 @@
 #include "UObject/ObjectTypes.h"
 #include "Animation/CustomAnimInstance/TestAnimInstance.h"
 #include "Font/IconDefs.h"
+#include "PhysicsEngine/PhysicsAsset.h"
 
 void ControlEditorPanel::Initialize(SLevelEditor* LevelEditor, float Width, float Height)
 {
@@ -481,7 +482,14 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                     case OBJ_SKELETAL:
                     {
                         SpawnedActor = World->SpawnActor<ASkeletalMeshActor>();
-                        Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->SetData("Contents/FBX/Rumba_Dancing.fbx");
+                        //Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->SetData("Contents/FBX/Rumba_Dancing.fbx");
+                            FArchive Ar;
+                            USkeletalMesh* SkeletalMesh = FObjectFactory::ConstructObject<USkeletalMesh>(nullptr);
+                            
+                            Ar.LoadFromFile(TEXT("Contents/Constraints.DDAL"));
+                            SkeletalMesh->Deserialize(Ar);
+                            SkeletalMesh->GetPhysicsAsset()->UpdateBodySetupIndexMap();
+                            Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->SetSkeletalMesh(SkeletalMesh);
                         if (Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->GetSkeletalMesh()->GetPhysicsAsset())
                         {
                             Cast<ASkeletalMeshActor>(SpawnedActor)->GetSkeletalMeshComponent()->InstantiatePhysicsAssetBodies_Internal();
