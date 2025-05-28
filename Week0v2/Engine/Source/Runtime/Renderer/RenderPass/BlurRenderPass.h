@@ -13,6 +13,8 @@ public:
     bool bRender;
 
     class ID3D11Buffer* BlurConstantBuffer = nullptr;
-
+    ID3D11Buffer* DoFConstantBuffer = nullptr;
+    
     void UpdateBlurConstant(float BlurStrength, float TexelX, float TexelY) const;
+    void UpdateDOFConstant(std::shared_ptr<FViewportClient> InViewportClient) const;
 };

@@ -9,9 +9,23 @@ cbuffer BlurConstants : register(b0) // 다른 상수 버퍼와 겹치지 않는
     // 필요시 패딩
     float Padding;
 };
+cbuffer FDoFConstants : register(b2)
+{
+    float NearPlane;
+    float FarPlane;
+    float FocusDepth;
+    float FocusRange;
+    
+    float MaxCoC;
+    float2 InvScreenSize;
+    float Padding0;
+};
+
 // 입력 텍스처 (원본 씬 텍스처)
 Texture2D InputTexture : register(t0);
+Texture2D SceneDepth : register(t1);
 SamplerState SamplerLinear : register(s0);
+
 struct VS_OUT
 {
     float4 position : SV_POSITION;
@@ -34,6 +48,22 @@ float GaussianWeight(float offset, float sigma)
 static const int KERNEL_RADIUS = 11; // 7x7 커널 예시 (49 샘플)
 float4 mainPS(VS_OUT input) : SV_TARGET
 {
+    float z = SceneDepth.Sample(SamplerLinear, input.uv).r;
+// 1) 선형화
+    float viewZ = (NearPlane * FarPlane) / (FarPlane - z * (FarPlane - NearPlane));
+// (선택) 정규화: viewZ = (viewZ - NearPlane) / (FarPlane - NearPlane);
+
+    float distanceFromFocus = abs(viewZ - FocusDepth);
+
+    float coc = 0.0;
+    if (distanceFromFocus > FocusRange)
+    {
+        coc = saturate((distanceFromFocus - FocusRange) / FocusRange);
+        coc = min(coc, MaxCoC);
+    }
+    
+    int radius = int(coc * KERNEL_RADIUS);
+    
     float2 viewportUV = input.uv * ViewportSize + ViewportOffset;
     float4 totalColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
     float totalWeight = 0.0f;
@@ -45,16 +75,15 @@ float4 mainPS(VS_OUT input) : SV_TARGET
         [unroll] // 안쪽 루프 풀기
         for (int i = -KERNEL_RADIUS; i <= KERNEL_RADIUS; ++i)
         {
-            // 현재 샘플링할 픽셀의 UV 오프셋 계산
-            float2 offsetUV = viewportUV + float2(TexelSize.x * i, TexelSize.y * j);
-            // 2D 가우시안 가중치 계산 (1D 가중치의 곱으로 계산 가능 - 분리성 활용)
-            // 또는 거리 기반으로 계산: float distSq = i*i + j*j; weight = exp(-distSq / (2*sigmaSq));
-            float weightX = GaussianWeight(float(i), sigma);
-            float weightY = GaussianWeight(float(j), sigma);
-            float weight = weightX * weightY; // 2D 가중치
-            // 텍스처 샘플링 및 가중치 적용하여 누적
-            totalColor += InputTexture.Sample(SamplerLinear, offsetUV) * weight;
-            totalWeight += weight;
+            if (abs(i) <= radius && abs(j) <= radius)
+            {
+                float2 offsetUV = viewportUV + float2(TexelSize.x * i, TexelSize.y * j);
+                float weightX = GaussianWeight(float(i), sigma);
+                float weightY = GaussianWeight(float(j), sigma);
+                float weight = weightX * weightY;
+                totalColor += InputTexture.Sample(SamplerLinear, offsetUV) * weight;
+                totalWeight += weight;
+            }
         }
     }
     // 최종 색상 계산 (가중 평균)

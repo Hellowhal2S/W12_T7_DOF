@@ -11,6 +11,7 @@
 #include "RenderPass/FogRenderPass.h"
 #include "RenderPass/ShadowRenderPass.h"
 
+class FDepthOfFieldRenderPass;
 class FParticleMeshRenderPass;
 class FParticleRenderPass;
 class FSkeletalMeshRenderPass;
@@ -121,6 +122,7 @@ private:
     std::shared_ptr<FParticleRenderPass> ParticleRenderPass;
     std::shared_ptr<FParticleMeshRenderPass> ParticleMeshRenderPass;
     std::shared_ptr<FFinalRenderPass> FinalRenderPass;
+    std::shared_ptr<FDepthOfFieldRenderPass> DepthOfFieldRenderPass;
 
     ERasterizerState CurrentRasterizerState = ERasterizerState::SolidBack;
     EViewModeIndex CurrentViewMode = VMI_Lit_Goroud;

@@ -351,7 +351,8 @@ void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh
                     FVector( B.X,  B.Y,  B.Z)
                 );
                 FVector worldCenter = boneM.TransformPosition(B.Center);
-                PB.AddAABB(localAABB, worldCenter, boneM);
+                FMatrix LastboneM = boneM*FMatrix::CreateRotationMatrix(B.Rotation.Roll,B.Rotation.Pitch,B.Rotation.Yaw) ;
+                PB.AddAABB(localAABB, worldCenter, LastboneM);
             }
 
             // 3) Capsules
@@ -360,7 +361,8 @@ void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh
                 // 로컬 -> 월드
                 FVector centerWS = boneM.TransformPosition(C.Center);
                 // 캡슐 축 방향: 로컬 Z 축을 UpVector 로 가정
-                FVector upWS = FMatrix::TransformVector(FVector::UpVector,boneM);
+                FMatrix LastboneM  = boneM*FMatrix::CreateRotationMatrix(C.Rotation.Roll,C.Rotation.Pitch,C.Rotation.Yaw);
+                FVector upWS = FMatrix::TransformVector(FVector::UpVector,LastboneM);
                 PB.AddCapsule(centerWS, upWS, C.Length * 0.5f, C.Radius, ColorCapsule);
             }
 

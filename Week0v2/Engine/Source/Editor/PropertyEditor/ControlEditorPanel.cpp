@@ -302,7 +302,33 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
             EditorEngine->testBlurStrength = BlurStrength;
         }
         ImGui::Separator();
+        
+        ImGui::Text("Focus Depth");
+        float FocusDepth = GEngineLoop.FocusDepth;
+        ImGui::SetNextItemWidth(120.0f);
+        if (ImGui::DragFloat("##Focus Depth", &FocusDepth, 0.1f, 0.0f, 1500.0f, "%.1f"))
+        {
+            GEngineLoop.FocusDepth = FocusDepth;
+        }
+        ImGui::Separator();
 
+        ImGui::Text("Focus Range");
+        float FocusRange = GEngineLoop.FocusRange;
+        ImGui::SetNextItemWidth(120.0f);
+        if (ImGui::DragFloat("##Focus Range", &FocusRange, 0.1f, 0.0f, 1000.0f, "%.1f"))
+        {
+            GEngineLoop.FocusRange = FocusRange;
+        }
+        ImGui::Separator();
+        
+        ImGui::Text("Max Coc");
+        float MaxCoc = GEngineLoop.MaxCoc;
+        ImGui::SetNextItemWidth(120.0f);
+        if (ImGui::DragFloat("##Max Coc", &MaxCoc, 0.01f, 0.0f, 30.0f, "%.1f"))
+        {
+            GEngineLoop.MaxCoc = MaxCoc;
+        }
+        ImGui::Separator();
         ImGui::EndPopup();
     }
 

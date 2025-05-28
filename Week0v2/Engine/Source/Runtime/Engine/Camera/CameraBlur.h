@@ -14,8 +14,10 @@ public:
     
     // 블러 효과를 즉시 설정
     void SetBlurStrength(float NewStrength);
+    
     // 블러 효과를 서서히 증가시킴
     void FadeInBlur(float TargetStrength = 1.0f, float FadeTime = 0.5f);
+    
     // 블러 효과를 서서히 감소시킴
     void FadeOutBlur(float FadeTime = 0.5f);
     
