@@ -194,7 +194,10 @@ void UWorld::Simulate(float dt) {
             int ParentIndex = skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].ParentIndex;
             FMatrix RotationMatrix = FromPxQuat(pose.q).GetSafeNormal().ToMatrix();
             FMatrix TranslationMatrix = FMatrix::CreateTranslationMatrix(FromPxVec3(pose.p));
-            FMatrix GlobalTransform = RotationMatrix * TranslationMatrix;
+            FMatrix GlobalTransform = skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].GlobalTransform;
+            GlobalTransform.M[3][0] = TranslationMatrix.M[3][0];
+            GlobalTransform.M[3][1] = TranslationMatrix.M[3][1];
+            GlobalTransform.M[3][2] = TranslationMatrix.M[3][2];
             if (ParentIndex != INDEX_NONE)
             {
                 skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = GlobalTransform * skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].GlobalTransform.Inverse();
