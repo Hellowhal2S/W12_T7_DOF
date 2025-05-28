@@ -361,13 +361,18 @@ void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh
             }
 
             // 3) Capsules
-            for (const FKSphylElem& C : BS->AggGeom.SphylElems)
+            for (FKSphylElem& C : BS->AggGeom.SphylElems)
             {
-                // 로컬 -> 월드
+                // 로컬 -> 월드 중심점 변환
                 FVector centerWS = boneM.TransformPosition(C.Center);
-                // 캡슐 축 방향: 로컬 Z 축을 UpVector 로 가정
-                FMatrix LastboneM  = boneM*FMatrix::CreateRotationMatrix(C.Rotation.Roll,C.Rotation.Pitch,C.Rotation.Yaw);
-                FVector upWS = FMatrix::TransformVector(FVector::UpVector,LastboneM);
+
+                // 캡슐의 로컬 회전을 월드 공간으로 변환
+                FRotator localRotQuat(C.Rotation);
+                FQuat worldRotQuat = boneM.ToQuat() * localRotQuat.ToQuaternion();
+
+                // 캡슐의 축 방향 (로컬 Z축을 월드 공간으로 변환)
+                FVector upWS = worldRotQuat.RotateVector(FVector::UpVector);
+
                 PB.AddCapsule(centerWS, upWS, C.Length * 0.5f, C.Radius, ColorCapsule);
             }
 
