@@ -302,50 +302,85 @@ void FLineBatchRenderPass::ClearRenderObjects()
 
 void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh)
 {
+            // 싱글톤 얻어오기
     UPrimitiveBatch& PB = UPrimitiveBatch::GetInstance();
-
+    
+    const FVector4 ColorSphere  = FVector4(0.6f, 0.2f, 0.8f, 1.0f);
+    const FVector4 ColorBox     = FVector4(0.6f, 0.2f, 0.8f, 1.0f);
     const FVector4 ColorCapsule = FVector4(0.6f, 0.2f, 0.8f, 1.0f);
-
+    
+    // --- UBodySetup 기반 시각화 예시 ---
     if (UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetSkeletalMesh()->GetPhysicsAsset())
     {
-        const TArray<FBone>& Bones = SkeletalMesh->GetSkeletalMesh()->GetRenderData().Bones;
-
-        for (int b = 0; b < PhysicsAsset->BodySetup.Num(); ++b)
+        for (UBodySetup* BS : PhysicsAsset->BodySetup)
         {
-            UBodySetup* BS = PhysicsAsset->BodySetup[b];
             if (!BS) continue;
 
-            const FBone* Bone = nullptr;
-
-            // 람다 대신 수동 루프
-            for (int i = 0; i < Bones.Num(); ++i)
+            FMatrix boneM;
+            // 본에 매핑된 월드 트랜스폼(본 월드 매트릭스) 얻어오기
+            for (auto Bone : SkeletalMesh->GetSkeletalMesh()->GetRenderData().Bones)
             {
-                if (Bones[i].BoneName == BS->BoneName.ToString())
+                if (Bone.BoneName == BS->BoneName.ToString())
                 {
-                    Bone = &Bones[i];
-                    break;
+                    FRotator BoneRot;
+                    if (Bone.ParentIndex >= 0)
+                    {
+                        SkeletalMesh->GetSkeletalMesh()->GetRenderData().Bones[Bone.ParentIndex].GlobalTransform.GetRotationMatrix(BoneRot);
+                        boneM =  SkeletalMesh->GetSkeletalMesh()->GetRenderData().Bones[Bone.ParentIndex].GlobalTransform;
+                    }
+                    else
+                        continue;
                 }
             }
-            if (!Bone) continue;
+            boneM =  boneM * SkeletalMesh->GetWorldMatrix();
 
-            // Bone의 글로벌 변환과 SkeletalMesh의 월드 행렬 적용
-            FMatrix BoneMatrix = Bone->GlobalTransform * SkeletalMesh->GetWorldMatrix();
-
-            for (int c = 0; c < BS->AggGeom.SphylElems.Num(); ++c)
+            // 1) Spheres
+            for (const FKSphereElem& S : BS->AggGeom.SphereElems)
             {
-                const FKSphylElem& C = BS->AggGeom.SphylElems[c];
-
-                FVector CenterWS = BoneMatrix.TransformPosition(C.Center);
-
-                // PhysX는 X축이 캡슐 축임
-                FVector LocalDir = FVector(1, 0, 0); // 캡슐 로컬 축 방향
-                FQuat LocalRot = C.Rotation.ToQuaternion();
-                FVector RotatedDir = LocalRot.RotateVector(LocalDir);
-
-                FVector UpWS = FMatrix::TransformVector(RotatedDir, BoneMatrix).GetSafeNormal();
-
-                PB.AddCapsule(CenterWS, UpWS, C.Length * 0.5f, C.Radius, ColorCapsule);
+                // 로컬 센터를 월드로 변환
+                FVector centerWS = boneM.TransformPosition(S.Center);
+                PB.AddSphere(centerWS, S.Radius, ColorSphere);
             }
+
+            // 2) Boxes (AABB 로 그리기)
+            for (const FKBoxElem& B : BS->AggGeom.BoxElems)
+            {
+                // BoxElem.Center 는 로컬 오프셋, (X,Y,Z) 는 half‐extents
+                FBoundingBox localAABB(
+                    FVector(-B.X, -B.Y, -B.Z),
+                    FVector( B.X,  B.Y,  B.Z)
+                );
+                FVector worldCenter = boneM.TransformPosition(B.Center);
+                FMatrix LastboneM = boneM*FMatrix::CreateRotationMatrix(B.Rotation.Roll,B.Rotation.Pitch,B.Rotation.Yaw) ;
+                PB.AddAABB(localAABB, worldCenter, LastboneM);
+            }
+
+            // 3) Capsules
+            for (const FKSphylElem& C : BS->AggGeom.SphylElems)
+            {
+                // 로컬 -> 월드
+                FVector centerWS = boneM.TransformPosition(C.Center);
+                // 캡슐 축 방향: 로컬 Z 축을 UpVector 로 가정
+                FMatrix LastboneM  = boneM*FMatrix::CreateRotationMatrix(C.Rotation.Roll,C.Rotation.Pitch,C.Rotation.Yaw);
+                FVector upWS = FMatrix::TransformVector(FVector::UpVector,LastboneM);
+                PB.AddCapsule(centerWS, upWS, C.Length * 0.5f, C.Radius, ColorCapsule);
+            }
+
+            // 4) Convex (간단히 OBB 로 감싸기)
+            // for (const FKConvexElem& X : BS->AggGeom.ConvexElems)
+            // {
+            //     // ConvexElem.VertexData 를 최소한 2개 이상 가지고
+            //     if (X.VertexData.Num() >= 2)
+            //     {
+            //         // 로컬 버텍스 중 AABB 계산
+            //         FBoundingBox localBB;
+            //         for (const FVector& V : X.VertexData)
+            //             localBB = localBB +  V;
+            //
+            //         FVector worldCenter = boneM.TransformPosition(localBB.GetCenter());
+            //         PB.AddOBB(localBB, worldCenter, boneM);
+            //     }
+            // }
         }
     }
 }

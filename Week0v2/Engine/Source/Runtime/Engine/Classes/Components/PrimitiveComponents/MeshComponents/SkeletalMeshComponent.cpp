@@ -642,7 +642,7 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
             const float halfHeight = FMath::Max(length * 0.5f - radius, 0.1f);
 
             // 2) midpoint
-            const FVector midPoint = (parentPos + childPos) * 0.5f;
+            const FVector midPoint = ChildBone.LocalTransform.GetTranslationVector() * 0.5;
 
             // → 이제 본의 로컬 회전만 뽑아서, 월드→로컬 방향/위치로 변환합니다
             const FQuat childRot = ChildBone.GlobalTransform.ToQuat();
@@ -659,7 +659,7 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
             FKSphylElem capsule;
             capsule.Radius = radius;
             capsule.Length = halfHeight * 2.0f;
-            capsule.Center = offset;
+            capsule.Center = midPoint;
             capsule.Rotation = FRotator::ZeroRotator;
             BodySetup->AggGeom.SphylElems.Add(capsule);
         }
@@ -683,9 +683,17 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
         if (!pIndex) continue;
         int32 BoneIndex = *pIndex;
 
+        FMatrix boneM;
         // 2) 본 월드 위치
-        FVector globalPos = Bones[BoneIndex].GlobalTransform.GetTranslationVector();
+        if (Bones[BoneIndex].ParentIndex >=0 )
+        {
+            boneM =Bones[Bones[BoneIndex].ParentIndex].GlobalTransform;
+        }
+        else
+            continue;
+        FVector globalPos = Bones[Bones[BoneIndex].ParentIndex].GlobalTransform.GetTranslationVector();
 
+        boneM = boneM* GetWorldMatrix();
         // 3) 각 Primitive별 PxShape 생성
         TArray<PxShape*> Shapes;
 
@@ -720,19 +728,24 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
         for (const FKSphylElem& C : BodySetup->AggGeom.SphylElems)
         {
             // PhysX 캡슐은 X축 기준
-            PxCapsuleGeometry geo(C.Radius, C.Length * 0.5f);
-
+            FVector centerWS = boneM.TransformPosition(C.Center);
+            FMatrix LastboneM  = boneM*FMatrix::CreateRotationMatrix(C.Rotation.Roll,C.Rotation.Pitch,C.Rotation.Yaw);
+            // FRotator Rot = LastboneM.GetRotationMatrix();
+            FVector upWS = FMatrix::TransformVector(FVector::UpVector,LastboneM);
+            PxCapsuleGeometry geo(C.Radius, C.Length);
             // 에셋에 저장된 Unreal(Z축) 회전을 불러와 PhysX(X축)로 변환
-            FQuat unrealRot = C.Rotation.ToQuaternion();
-            FQuat fixedRot = ToX * unrealRot;
+            
+            FQuat unrealRot = FRotator(upWS.X,upWS.Y,upWS.Z).ToQuaternion();//C.Rotation.ToQuaternion();
+            
+            FQuat fixedRot = FQuat(boneM)* ToX ; 
+            PxTransform actorPose(
+        ToPxVec3(centerWS), 
+        ToPxQuat(fixedRot));             // FMatrix → FQuat 변환 함수 가정
+    
 
-            PxTransform localPose(
-                ToPxVec3(C.Center),
-                ToPxQuat(fixedRot)
-            );
 
             PxShape* shape = gPhysics->createShape(geo, *gMaterial);
-            shape->setLocalPose(localPose);
+            shape->setLocalPose(actorPose);
 
             PxFilterData fd = FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment,
                                                      FPhysX::ECollisionGroup::All);
