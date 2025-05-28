@@ -644,23 +644,19 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
             // 2) midpoint
             const FVector midPoint = ChildBone.LocalTransform.GetTranslationVector() * 0.5;
 
-            // → 이제 본의 로컬 회전만 뽑아서, 월드→로컬 방향/위치로 변환합니다
-            const FQuat childRot = ChildBone.GlobalTransform.ToQuat();
-            const FQuat invChildRot = FQuat::Inverse(childRot);
+            FVector worldDir = (childPos - parentPos).GetSafeNormal();
+
+            // 3) Z축(UpVector) → worldDir 로 회전하는 쿼터니언
+            FQuat worldQuat = FQuat::FindBetweenNormals(FVector::UpVector, worldDir);
 
             // 3) 로컬 센터 & 로컬 방향
-            FVector localCenter = invChildRot.RotateVector(midPoint - ChildBone.GlobalTransform.GetTranslationVector());
-            FVector localDir = invChildRot.RotateVector(offset).GetSafeNormal();
-
-            // 4) Z축 기준 캡슐 회전
-            FQuat localRotation = FQuat::FindBetweenNormals(FVector(0, 0, 1), localDir);
-
+            
             // 5) 저장
             FKSphylElem capsule;
             capsule.Radius = radius;
             capsule.Length = halfHeight * 2.0f;
             capsule.Center = midPoint;
-            capsule.Rotation = FRotator::ZeroRotator;
+            capsule.Rotation = worldQuat.Rotator();
             BodySetup->AggGeom.SphylElems.Add(capsule);
         }
     }
@@ -737,13 +733,12 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
             
             FQuat unrealRot = FRotator(upWS.X,upWS.Y,upWS.Z).ToQuaternion();//C.Rotation.ToQuaternion();
             
-            FQuat fixedRot = FQuat(boneM)* ToX ; 
+            FQuat fixedRot = C.Rotation.ToQuaternion() * ToX ; 
             PxTransform actorPose(
         ToPxVec3(centerWS), 
         ToPxQuat(fixedRot));             // FMatrix → FQuat 변환 함수 가정
     
-
-
+            
             PxShape* shape = gPhysics->createShape(geo, *gMaterial);
             shape->setLocalPose(actorPose);
 
