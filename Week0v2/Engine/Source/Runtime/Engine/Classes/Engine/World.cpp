@@ -162,121 +162,66 @@ FGameObject UWorld::CreateBox(
 }
     
 void UWorld::Simulate(float dt) {
-    gScene->simulate(dt * 0.5f);
+    gScene->simulate(dt);
     gScene->fetchResults(true);
     
      // 예시: 모든 동적(Dynamic) 및 정적(Static) 바디 가져오기
     PxU32 bufferSize = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
     std::vector<PxActor*> actorBuffer(bufferSize);
     gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actorBuffer.data(), bufferSize);
-    
-    TMap<USkeletalMeshComponent*, TArray<TPair<FBodyInstance*, PxTransform>>> SkelMap;
-
-    for (PxU32 i = 0; i < bufferSize; ++i)
-    {
+    bool isdirty = false;
+    for (PxU32 i = 0; i < bufferSize; ++i) {
         PxActor* actor = actorBuffer[i];
         if (!actor->userData) continue;
-
-        // 3-1) Actor global pose
-        PxTransform actorPose;
-        if (auto* dyn = actor->is<PxRigidDynamic>())
-        {
-            actorPose = dyn->getGlobalPose();
+    
+        // actor를 사용 (예: userData로 엔진 오브젝트 찾기, pose 읽기 등)
+        PxTransform pose;
+        if (PxRigidDynamic* dyn = actor->is<PxRigidDynamic>()) {
+            pose = dyn->getGlobalPose();
+        } else if (PxRigidStatic* stat = actor->is<PxRigidStatic>()) {
+            pose = stat->getGlobalPose();
         }
-        else if (auto* stat = actor->is<PxRigidStatic>())
-        {
-            actorPose = stat->getGlobalPose();
+        
+        FBodyInstance* BodyInst = (FBodyInstance*)actor->userData;
+        
+        // StaticMeshComponent
+        if (UStaticMeshComponent* staticComp = Cast<UStaticMeshComponent>(BodyInst->OwnerComponent)) {
+            staticComp->SetWorldLocation(FromPxVec3(pose.p));
+            staticComp->SetWorldRotation(FromPxQuat(pose.q));
         }
-
-        // 3-2) Shape local pose (ragdoll BodyInstance는 보통 1개 Shape)
-        PxShape* shape = nullptr;
-        if (PxRigidDynamic* dyn = actor->is<PxRigidDynamic>())
-        {
-            // PxRigidDynamic 에서 Shape 1개 가져오기
-            dyn->getShapes(&shape, 1);
-        }
-        else if (PxRigidStatic* stat = actor->is<PxRigidStatic>())
-        {
-            // PxRigidStatic 에서도 Shape 1개 가져오기
-            stat->getShapes(&shape, 1);
-        }
-
-        PxTransform shapeLocal = shape ? shape->getLocalPose() : PxTransform(PxIdentity);
-
-        // 3-3) BodyInstance & 컴포넌트 조회
-        FBodyInstance* BI = static_cast<FBodyInstance*>(actor->userData);
-        if (auto* staticComp = Cast<UStaticMeshComponent>(BI->OwnerComponent))
-        {
-            // Static Mesh는 이전처럼 즉시 업데이트
-            staticComp->SetWorldLocation( FromPxVec3(actorPose.p) );
-            staticComp->SetWorldRotation( FromPxQuat(actorPose.q) );
-        }
-        else if (auto* skelComp = Cast<USkeletalMeshComponent>(BI->OwnerComponent))
-        {
-            // Skeletal 용 데이터 모아두기
-            SkelMap.FindOrAdd(skelComp).Add( TPair<FBodyInstance*,PxTransform>(BI, actorPose) );
-        }
-    }
-    for (auto& Pair : SkelMap)
-    {
-        USkeletalMeshComponent* SkelComp = Pair.Key;
-        const TArray<TPair<FBodyInstance*, PxTransform>>& Bodies = Pair.Value;
-
-        // 4-1) 참조 스켈레톤
-        const USkeleton* Skeleton = SkelComp->GetSkeletalMesh()->GetSkeleton();
-        const FRefSkeletal* RefSkel = Skeleton->GetRefSkeletal();
-        auto& RenderData = SkelComp->GetSkeletalMesh()->GetRenderData().Bones;
-
-        // 4-2) 루트→자식 순서(RefSkel 배열 순서)로 본 갱신
-        for (int32 BoneIdx = 0; BoneIdx < RefSkel->RawBones.Num(); ++BoneIdx)
-        {
-            const FName   BoneName    = RefSkel->RawBones[BoneIdx].BoneName;
-            const int32   ParentIdx   = RefSkel->RawBones[BoneIdx].ParentIndex;
-
-            // 이 본에 대응되는 BodyInstance 찾기
-            const TPair<FBodyInstance*, PxTransform>* Found = nullptr;
-            for (auto& BIData : Bodies)
+        // SkeletalMeshComponent - 본 단위
+        else if (USkeletalMeshComponent* skelComp = Cast<USkeletalMeshComponent>(BodyInst->OwnerComponent)) {
+            int* Index = skelComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(BodyInst->BoneName.ToString());
+            int ParentIndex = skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].ParentIndex;
+            FMatrix RotationMatrix = FromPxQuat(pose.q).GetSafeNormal().ToMatrix();
+            FMatrix TranslationMatrix = FMatrix::CreateTranslationMatrix(FromPxVec3(pose.p));
+            FMatrix RefGMat;
+            if (ParentIndex != INDEX_NONE)
             {
-                if (BIData.Key->BoneName == BoneName)
+                RefGMat = skelComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->RawBones[ParentIndex].GlobalTransform;
+            }
+            else if (!isdirty)
+            {
+                RefGMat = skelComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->RawBones[*Index].GlobalTransform;
+            }
+            FMatrix GlobalTransform = RefGMat * RotationMatrix;
+            GlobalTransform.M[3][0] = TranslationMatrix.M[3][0];
+            GlobalTransform.M[3][1] = TranslationMatrix.M[3][1];
+            GlobalTransform.M[3][2] = TranslationMatrix.M[3][2];
+            if (ParentIndex != INDEX_NONE)
+            {
+                int PaParentIndex = skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].ParentIndex;
+                if (PaParentIndex != INDEX_NONE)
                 {
-                    Found = &BIData;
-                    break;
+                    skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].LocalTransform = GlobalTransform * skelComp->GetSkeletalMesh()->GetRenderData().Bones[PaParentIndex].GlobalTransform.Inverse();
                 }
             }
-            if (!Found) continue;
-
-            // 4-3) PhysX → Unreal 변환
-            const PxTransform& BonePx = Found->Value;
-            FQuat NewQuat = FromPxQuat(BonePx.q);
-            FVector NewVec = FromPxVec3(BonePx.p);
-
-            // 4-4) Global / Local 매트릭스 계산
-            FMatrix RotM = NewQuat.ToMatrix();
-            FMatrix LocalM = FMatrix::CreateTranslationMatrix(NewVec);
-
-            FMatrix RefGMat = RefSkel->RawBones[BoneIdx].GlobalTransform;
-            FMatrix GlobalTransform =  RotM * RefGMat;
-            GlobalTransform.M[3][0] = LocalM.M[3][0];
-            GlobalTransform.M[3][1] = LocalM.M[3][1];
-            GlobalTransform.M[3][2] = LocalM.M[3][2];
-            
-            if (ParentIdx != INDEX_NONE)
+            else if (!isdirty)
             {
-                const FMatrix& ParentGlobal = RenderData[ParentIdx].GlobalTransform;
-                LocalM = GlobalTransform * ParentGlobal.Inverse();
+                skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = GlobalTransform;
             }
-            else
-            {
-                LocalM = GlobalTransform;
-            }
-
-            // 4-5) RenderData에 적용
-            // RenderData[BoneIdx].GlobalTransform = GlobalTransform;
-            RenderData[BoneIdx].LocalTransform  = LocalM;
-            SkelComp->GetSkeletalMesh()->UpdateBoneHierarchy();
+            skelComp->GetSkeletalMesh()->UpdateBoneHierarchy();
         }
-
-        // 5) 컴포넌트당 한 번만 갱신
     }
 }
 

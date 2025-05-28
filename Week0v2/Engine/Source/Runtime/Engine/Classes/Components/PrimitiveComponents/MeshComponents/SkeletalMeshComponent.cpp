@@ -753,7 +753,7 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
 
         // 부모 본의 월드 행렬
         const FMatrix ParentWorldTM = Bones[ParentIndex].GlobalTransform * GetWorldMatrix();
-        const FVector globalPos = Bones[ChildIndex].GlobalTransform.GetTranslationVector();
+        const FVector globalPos = Bones[ParentIndex].GlobalTransform.GetTranslationVector();
 
         TArray<PxShape*> Shapes;
 
