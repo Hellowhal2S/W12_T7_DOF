@@ -110,13 +110,14 @@ void UPrimitiveBatch::AddOBB(const FBoundingBox& localAABB, const FVector& cente
 
 }
 
-void UPrimitiveBatch::AddCone(const FVector& start, float radius, const FVector& end, int segments, const FVector4& color)
+void UPrimitiveBatch::AddCone(const FVector& start, float radius1, float radius2, const FVector& end, int segments, const FVector4& color)
 {
     ConeSegmentCount = segments;
     FCone cone;
     cone.ConeApex = start;
     cone.ConeBaseCenter = end;
-    cone.ConeRadius = radius;
+    cone.ConeRadius1 = radius1;
+    cone.ConeRadius2 = radius2;
     cone.ConeHeight = (start-end).Magnitude();
     cone.Color = color;
     cone.ConeSegmentCount = ConeSegmentCount;

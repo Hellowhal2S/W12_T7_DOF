@@ -36,14 +36,16 @@ struct FBoundingBoxData
 struct FConeData
 {
     float3 ConeApex; // 원뿔의 꼭짓점
-    float ConeRadius; // 원뿔 밑면 반지름
+    float ConeRadius1; // 원뿔 밑면 반지름
     
+    float ConeRadius2;
     float3 ConeBaseCenter; // 원뿔 밑면 중심
-    float ConeHeight; // 원뿔 높이 (Apex와 BaseCenter 간 차이)
+    
     float4 Color;
     
+    float ConeHeight; // 원뿔 높이 (Apex와 BaseCenter 간 차이)
     int ConeSegmentCount; // 원뿔 밑면 분할 수
-    float pad[3];
+    float pad[2];
 };
 
 struct FCapsuleData
@@ -243,7 +245,7 @@ float3 ComputeConePosition(uint globalInstanceID, uint vertexID)
     {
         // 측면 선분: cone의 꼭짓점과 밑면의 한 점을 잇는다.
         float angle = lineIndex * 6.28318530718 / N;
-        float3 baseVertex = cone.ConeBaseCenter + (cos(angle) * u + sin(angle) * v) * cone.ConeRadius;
+        float3 baseVertex = cone.ConeBaseCenter + (cos(angle) * u * cone.ConeRadius1) + (sin(angle) * v * cone.ConeRadius2);
         return (vertexID == 0) ? cone.ConeApex : baseVertex;
     }
     else
@@ -252,8 +254,8 @@ float3 ComputeConePosition(uint globalInstanceID, uint vertexID)
         uint idx = lineIndex - N;
         float angle0 = idx * 6.28318530718 / N;
         float angle1 = ((idx + 1) % N) * 6.28318530718 / N;
-        float3 v0 = cone.ConeBaseCenter + (cos(angle0) * u + sin(angle0) * v) * cone.ConeRadius;
-        float3 v1 = cone.ConeBaseCenter + (cos(angle1) * u + sin(angle1) * v) * cone.ConeRadius;
+        float3 v0 = cone.ConeBaseCenter + (cos(angle0) * u * cone.ConeRadius1) + (sin(angle0) * v * cone.ConeRadius1);
+        float3 v1 = cone.ConeBaseCenter + (cos(angle1) * u * cone.ConeRadius1) + (sin(angle1) * v * cone.ConeRadius2);
         return (vertexID == 0) ? v0 : v1;
     }
 }

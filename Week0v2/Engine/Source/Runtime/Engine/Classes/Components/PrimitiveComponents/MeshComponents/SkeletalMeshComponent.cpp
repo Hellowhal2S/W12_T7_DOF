@@ -310,12 +310,15 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetConstraints_Internal()
          const TArray<FBone>& Bones = SkeletalMesh->GetRenderData().Bones;
          
          int* parentIndex = GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(ConstraintSetup->JointElem.ParentBoneName.ToString());
-         FVector anchorF = Bones[*parentIndex].GlobalTransform.GetTranslationVector();
-         PxVec3 anchorPos = ToPxVec3(anchorF);
+
+         PxVec3 anchorVec = ToPxVec3(ConstraintSetup->JointElem.Center);
+         PxQuat anchorRot = ToPxQuat(ConstraintSetup->JointElem.Rotation);
+
+         PxTransform anchorTransform = PxTransform(anchorVec, anchorRot);
          
          // 2. 조인트 로컬 프레임 계산
-         PxTransform localParent = PxTransform(parentBody->RigidActorHandle->getGlobalPose().getInverse() * PxTransform(anchorPos));
-         PxTransform localChild  = PxTransform(childBody->RigidActorHandle->getGlobalPose().getInverse() * PxTransform(anchorPos));
+         PxTransform localParent = PxTransform(parentBody->RigidActorHandle->getGlobalPose().getInverse() * anchorTransform);
+         PxTransform localChild  = PxTransform(childBody->RigidActorHandle->getGlobalPose().getInverse() * anchorTransform);
     
          // 3. PhysX 조인트 생성
          PxD6Joint* joint = PxD6JointCreate(*gPhysics, parentBody->RigidActorHandle, localParent, childBody->RigidActorHandle, localChild);
@@ -328,7 +331,7 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetConstraints_Internal()
          joint->setTwistLimit(PxJointAngularLimitPair(
              ConstraintSetup->JointElem.TwistLimitMin, ConstraintSetup->JointElem.TwistLimitMax));
          joint->setSwingLimit(PxJointLimitCone(
-             ConstraintSetup->JointElem.SwingLimitMax, ConstraintSetup->JointElem.SwingLimitMax));
+             ConstraintSetup->JointElem.SwingLimitMax1, ConstraintSetup->JointElem.SwingLimitMax2));
     
          // 5. ConstraintInstance에 저장
          FConstraintInstance* Instance = new FConstraintInstance(this, ConstraintSetup->JointName, joint);

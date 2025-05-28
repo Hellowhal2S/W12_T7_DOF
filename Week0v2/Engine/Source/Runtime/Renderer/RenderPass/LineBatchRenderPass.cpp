@@ -24,6 +24,8 @@
 #include "Engine/AssetManager.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/BoxElem.h"
+#include "PhysicsEngine/ConstraintSetup.h"
+#include "PhysicsEngine/JointElem.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/SphereElem.h"
 #include "PhysicsEngine/SphylElem.h"
@@ -237,6 +239,7 @@ void FLineBatchRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportCl
                         UPrimitiveBatch::GetInstance().AddCone(
                             SpotLight->GetWorldLocation(),
                             tan(SpotLight->GetOuterConeAngle()) * 15.0f,
+                            tan(SpotLight->GetOuterConeAngle()) * 15.0f,
                             SpotLight->GetWorldLocation() + SpotLight->GetWorldForwardVector() * 15.0f,
                             15,
                             SpotLight->GetLightColor()
@@ -246,6 +249,7 @@ void FLineBatchRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportCl
                     {
                         UPrimitiveBatch::GetInstance().AddCone(
                             SpotLight->GetWorldLocation(),
+                            tan(SpotLight->GetInnerConeAngle()) * 15.0f,
                             tan(SpotLight->GetInnerConeAngle()) * 15.0f,
                             SpotLight->GetWorldLocation() + SpotLight->GetWorldForwardVector() * 15.0f,
                             15,
@@ -308,6 +312,7 @@ void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh
     const FVector4 ColorSphere  = FVector4(0.6f, 0.2f, 0.8f, 1.0f);
     const FVector4 ColorBox     = FVector4(0.6f, 0.2f, 0.8f, 1.0f);
     const FVector4 ColorCapsule = FVector4(0.6f, 0.2f, 0.8f, 1.0f);
+    const FVector4 ColorConstraint = FVector4(1.0f, 0.0f, 0.0f, 1.0f);
     
     // --- UBodySetup 기반 시각화 예시 ---
     if (UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetSkeletalMesh()->GetPhysicsAsset())
@@ -381,6 +386,26 @@ void FLineBatchRenderPass::DrawDebugPhysics(USkeletalMeshComponent* SkeletalMesh
             //         PB.AddOBB(localBB, worldCenter, boneM);
             //     }
             // }
+        }
+
+        for (UConstraintSetup* CS : PhysicsAsset->ConstraintSetup)
+        {
+            if (!CS) continue;
+            
+            FVector joint_position = CS->JointElem.Center;      // 조인트 위치
+            FVector joint_direction = CS->JointElem.Rotation.RotateVector(FVector::XAxisVector);     // 조인트의 기준 방향 (보통 X축)
+            float cone_height = 20.0f;         // 시각화용 임의의 길이 (원하는 만큼)
+            
+            float swing_limit_angle1 = CS->JointElem.SwingLimitMax1; // 라디안 단위
+            float cone_radius1 = cone_height * FMath::Tan(swing_limit_angle1);
+            float swing_limit_angle2 = CS->JointElem.SwingLimitMax2;
+            float cone_radius2 = cone_height * FMath::Tan(swing_limit_angle2);
+            
+            int cone_segments = 24;
+
+            FVector cone_base_center = joint_position + joint_direction * cone_height;
+
+            PB.AddCone(joint_position, cone_radius1, cone_radius2, cone_base_center, cone_segments, ColorConstraint);
         }
     }
 }

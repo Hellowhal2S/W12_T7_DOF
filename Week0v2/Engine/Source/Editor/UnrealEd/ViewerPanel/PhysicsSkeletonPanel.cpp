@@ -353,11 +353,13 @@ void FPhysicsSkeletonPanel::RenderBoneHierarchy(USkeletalMesh* SkeletalMesh, int
                                     ImGui::BulletText("[%s]", *Constraint->JointName.ToString());
 
                                     // 추가로 제한 각도, 타입 등도 출력 가능
-                                    ImGui::Text("  Twist: [%.1f, %.1f]  Swing: [%.1f, %.1f]",
+                                    ImGui::Text("  Twist: [%.1f, %.1f]  Swing1: [%.1f, %.1f]  Swing2: [%.1f, %.1f]",
                                         FMath::RadiansToDegrees(Constraint->JointElem.TwistLimitMin),
                                         FMath::RadiansToDegrees(Constraint->JointElem.TwistLimitMax),
-                                        FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMin),
-                                        FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMax));
+                                        FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMin1),
+                                        FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMax1),
+                                        FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMin2),
+                                        FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMax2));
                                 }
                             }
                         }
@@ -514,12 +516,18 @@ void FPhysicsSkeletonPanel::AddConstraintToBone(const FName& ChildBoneName, cons
     FKJointElem NewConstraint;
     NewConstraint.ChildBoneName = ChildBoneName;
     NewConstraint.ParentBoneName = ParentBoneName;
+
+    int* ParentIndex = SkeletalMesh->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(ParentBoneName.ToString());
+    NewConstraint.Center = SkeletalMesh->GetRenderData().Bones[*ParentIndex].GlobalTransform.GetTranslationVector();
+    NewConstraint.Rotation = FQuat(SkeletalMesh->GetRenderData().Bones[*ParentIndex].GlobalTransform).GetSafeNormal();
     
     // 각도 제한
     NewConstraint.TwistLimitMin = -PxPi / 4;
     NewConstraint.TwistLimitMax = PxPi / 4;
-    NewConstraint.SwingLimitMin = -PxPi / 6;
-    NewConstraint.SwingLimitMax = PxPi / 6;
+    NewConstraint.SwingLimitMin1 = -PxPi / 6;
+    NewConstraint.SwingLimitMax1 = PxPi / 6;
+    NewConstraint.SwingLimitMin2 = -PxPi / 6;
+    NewConstraint.SwingLimitMax2 = PxPi / 6;
     
     // 축 제한
     NewConstraint.AxisMotions[PxD6Axis::eX]      = EJointMotion::Locked;

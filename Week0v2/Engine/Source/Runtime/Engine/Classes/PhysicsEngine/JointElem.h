@@ -15,14 +15,19 @@ enum class EJointMotion : uint8
 
 struct FKJointElem
 {
-    FName ParentBoneName;
-    FName ChildBoneName;
+    FName ParentBoneName; // 1
+    FName ChildBoneName;  // 2
 
+    FVector Center;
+    FQuat Rotation;
+    
     // Radian 값
     float TwistLimitMin;
     float TwistLimitMax;
-    float SwingLimitMin;
-    float SwingLimitMax;
+    float SwingLimitMin1;
+    float SwingLimitMax1;
+    float SwingLimitMin2;
+    float SwingLimitMax2;
 
      // eX      = 0,	//!< motion along the X axis
      // eY      = 1,	//!< motion along the Y axis
@@ -34,8 +39,8 @@ struct FKJointElem
     
     void Serialize(FArchive& Ar) const
     {
-        Ar << ParentBoneName << ChildBoneName
-            << TwistLimitMin << TwistLimitMax << SwingLimitMin << SwingLimitMax;
+        Ar << ParentBoneName << ChildBoneName << Center << Rotation
+            << TwistLimitMin << TwistLimitMax << SwingLimitMin1 << SwingLimitMax1 << SwingLimitMin2 << SwingLimitMax2;
         for (const EJointMotion& motion : AxisMotions)
         {
             uint8 value = static_cast<uint8>(motion);
@@ -44,8 +49,8 @@ struct FKJointElem
     }
     void Deserialize(FArchive& Ar)
     {
-        Ar >> ParentBoneName >> ChildBoneName
-           >> TwistLimitMin >> TwistLimitMax >> SwingLimitMin >> SwingLimitMax;
+        Ar >> ParentBoneName >> ChildBoneName >> Center >> Rotation
+           >> TwistLimitMin >> TwistLimitMax >> SwingLimitMin1 >> SwingLimitMax1 >> SwingLimitMin2 >> SwingLimitMax2;
         for (EJointMotion& motion : AxisMotions)
         {
             uint8 value;

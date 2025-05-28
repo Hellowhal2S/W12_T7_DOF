@@ -146,12 +146,20 @@ void FSkeletonDetailPanel::Render(UBodySetup* BodySetup, TArray<UConstraintSetup
                             Constraint->JointElem.TwistLimitMax = FMath::DegreesToRadians(twistMax);
 
                         // Swing 제한
-                        float swingMin = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMin);
-                        float swingMax = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMax);
-                        if (ImGui::InputFloat("Swing Min (deg)", &swingMin))
-                            Constraint->JointElem.SwingLimitMin = FMath::DegreesToRadians(swingMin);
-                        if (ImGui::InputFloat("Swing Max (deg)", &swingMax))
-                            Constraint->JointElem.SwingLimitMax = FMath::DegreesToRadians(swingMax);
+                        float swingMin1 = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMin1);
+                        float swingMax1 = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMax1);
+                        if (ImGui::InputFloat("Swing Min1 (deg)", &swingMin1))
+                            Constraint->JointElem.SwingLimitMin1 = FMath::DegreesToRadians(swingMin1);
+                        if (ImGui::InputFloat("Swing Max1 (deg)", &swingMax1))
+                            Constraint->JointElem.SwingLimitMax1 = FMath::DegreesToRadians(swingMax1);
+
+                        // Swing 제한
+                        float swingMin2 = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMin2);
+                        float swingMax2 = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMax2);
+                        if (ImGui::InputFloat("Swing Min2 (deg)", &swingMin2))
+                            Constraint->JointElem.SwingLimitMin2 = FMath::DegreesToRadians(swingMin2);
+                        if (ImGui::InputFloat("Swing Max2 (deg)", &swingMax2))
+                            Constraint->JointElem.SwingLimitMax2 = FMath::DegreesToRadians(swingMax2);
 
                         // 축별 제한(ComboBox)
                         static const char* axisNames[] = { "X", "Y", "Z", "Twist", "Swing1", "Swing2" };
