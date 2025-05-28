@@ -644,7 +644,7 @@ void USkeletalMeshComponent::CreateRagedollBodySetUp()
             FVector offsetWS = childPosWS - parentPosWS;
 
             const float length = offsetWS.Magnitude();
-            const float radius = FMath::Clamp(length * 0.1f, 0.1f, 1.0f);
+            const float radius = FMath::Clamp(length * 0.2f, 0.1f, 2.0f);
 
             // 캡슐 길이 계산 (실린더 부분만 고려, 반구는 별도)
             const float cylinderLength = FMath::Max(length - radius * 2, 0.1f); // 최소 길이 보장
@@ -837,7 +837,7 @@ void USkeletalMeshComponent::InstantiatePhysicsAssetBodies_Internal()
         {
             Instance->AttachShape(*shape);
         }
-
+        
         PxRigidBodyExt::updateMassAndInertia(*Instance->RigidDynamicHandle, 1.0f);
         Instance->RigidActorHandle->userData = (void*)Instance;
         GetWorld()->GetPhysicsScene()->addActor(*Instance->RigidDynamicHandle);
