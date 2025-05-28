@@ -11,6 +11,7 @@
 #include "Engine/Engine.h"
 #include "Engine/FEditorStateManager.h"
 #include "RenderPass/BlurRenderPass.h"
+#include "RenderPass/DepthOfFieldRenderPass.h"
 #include "RenderPass/EditorIconRenderPass.h"
 #include "RenderPass/FadeRenderPass.h"
 #include "RenderPass/FinalRenderPass.h"
@@ -98,6 +99,9 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     CreateVertexPixelShader(TEXT("HeightFog"), nullptr);
     FogRenderPass = std::make_shared<FFogRenderPass>(TEXT("HeightFog"));
 
+    CreateVertexPixelShader(TEXT("DOF"),nullptr);
+    DepthOfFieldRenderPass = std::make_shared<FDepthOfFieldRenderPass>(TEXT("DOF"));
+
     CreateVertexPixelShader(TEXT("Shadow"), nullptr);
     ShadowRenderPass = std::make_shared<FShadowRenderPass>(TEXT("Shadow"));
 
@@ -120,6 +124,7 @@ void FRenderer::Initialize(FGraphicsDevice* graphics)
     
     CreateVertexPixelShader(TEXT("Final"), nullptr);
     FinalRenderPass = std::make_shared<FFinalRenderPass>(TEXT("Final"));
+
 }
 
 void FRenderer::PrepareShader(const FName InShaderName)
@@ -302,7 +307,9 @@ void FRenderer::Render(const std::shared_ptr<FEditorViewportClient>& ActiveViewp
         FogRenderPass->Prepare(ActiveViewportClient);
         FogRenderPass->Execute(ActiveViewportClient);
     }
-
+     DepthOfFieldRenderPass->Prepare(ActiveViewportClient);
+     //DepthOfFieldRenderPass->Execute(ActiveViewportClient);
+    
     BlurRenderPass->Prepare(ActiveViewportClient);
     BlurRenderPass->Execute(ActiveViewportClient);
 

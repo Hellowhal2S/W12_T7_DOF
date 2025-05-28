@@ -1,27 +1,14 @@
-#include "BlurRenderPass.h"
+﻿#include "DepthOfFieldRenderPass.h"
+#include <D3D11RHI/CBStructDefine.h>
 
-#include "FadeRenderPass.h"
-
-#include "EditorEngine.h"
 #include "LaunchEngineLoop.h"
-#include "Viewport.h"
-#include "D3D11RHI/CBStructDefine.h"
-#include "D3D11RHI/GraphicDevice.h"
-#include "LevelEditor/SLevelEditor.h"
 #include "Renderer/Renderer.h"
-#include "SlateCore/Layout/SlateRect.h"
 #include "UnrealEd/EditorViewportClient.h"
 
-class FRenderResourceManager;
 
-FBlurRenderPass::FBlurRenderPass(const FName& InShaderName)
-    : FBaseRenderPass(InShaderName)
+FDepthOfFieldRenderPass::FDepthOfFieldRenderPass(const FName& InShaderName)
+:FBaseRenderPass(InShaderName)
 {
-    FRenderer& Renderer = GEngineLoop.Renderer;
-    FRenderResourceManager* RenderResourceManager = Renderer.GetResourceManager();
-    bRender = true;
-    BlurConstantBuffer = RenderResourceManager->CreateConstantBuffer(sizeof(FFadeConstants));
-
     FGraphicsDevice& Graphics = GEngineLoop.GraphicDevice;
     D3D11_BUFFER_DESC cbDesc = {};
     cbDesc.ByteWidth = sizeof(FDoFConstants);
@@ -35,13 +22,15 @@ FBlurRenderPass::FBlurRenderPass(const FName& InShaderName)
     {
         // 에러 처리
     }
+    bRender = true;
 }
 
-void FBlurRenderPass::AddRenderObjectsToRenderPass(UWorld* World)
+void FDepthOfFieldRenderPass::AddRenderObjectsToRenderPass(UWorld* World)
 {
+
 }
 
-void FBlurRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClient)
+void FDepthOfFieldRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClient)
 {
     bRender = true;
     if (bRender)
@@ -49,57 +38,44 @@ void FBlurRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClient)
         FBaseRenderPass::Prepare(InViewportClient);
         const FRenderer& Renderer = GEngineLoop.Renderer;
         FGraphicsDevice& Graphics = GEngineLoop.GraphicDevice;
-        Graphics.SwapPingPongBuffers();
 
         const auto CurRTV = Graphics.GetCurrentRenderTargetView();
         Graphics.DeviceContext->OMSetRenderTargets(1, &CurRTV, nullptr);
+        Graphics.DeviceContext->CopyResource(Graphics.GetCurrentWindowData()->DepthCopyTexture, Graphics.GetCurrentWindowData()->DepthStencilBuffer);
         Graphics.DeviceContext->OMSetDepthStencilState(Renderer.GetDepthStencilState(EDepthStencilState::DepthNone), 0);
 
         Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         
-        ID3D11SamplerState* Sampler = Renderer.GetSamplerState(ESamplerType::Point);
+        ID3D11SamplerState* Sampler = Renderer.GetSamplerState(ESamplerType::Linear);
         Graphics.DeviceContext->PSSetSamplers(0, 1, &Sampler);
-
+        Graphics.DeviceContext->PSSetSamplers(1, 1, &Sampler);
+        
         const auto PreviousSRV = Graphics.GetPreviousShaderResourceView();
         Graphics.DeviceContext->PSSetShaderResources(0, 1, &PreviousSRV);
         Graphics.DeviceContext->PSSetShaderResources(1, 1, &Graphics.GetCurrentWindowData()->DepthCopySRV);
     }
 }
 
-void FBlurRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
+void FDepthOfFieldRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
 {
+    if (!bRender) return;
+    
     FGraphicsDevice& Graphics = GEngineLoop.GraphicDevice;
 
-    if (bRender)
-    {
-        auto viewPort = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient);
-        if (UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine))
-        {
-            UpdateScreenConstant(InViewportClient);
-            UpdateDOFConstant(InViewportClient);
-            UpdateBlurConstant(EditorEngine->testBlurStrength,1 / viewPort->GetViewport()->GetFSlateRect().Width, 1 / viewPort->GetViewport()->GetFSlateRect().Height);
-        }
-        Graphics.DeviceContext->Draw(6, 0);
+    // 1) IA 단계: 입력 레이아웃만 세팅하고, VB/IB 언바인딩
+    Graphics.DeviceContext->IASetInputLayout(nullptr);
+    Graphics.DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-        bRender = false;
-    }
+    // 2) 셰이더는 Prepare() 단계에서 이미 바인딩됨(VS, PS, CB, SRV, Sampler)
+    UpdateDoFConstant(InViewportClient);
+    // 3) 풀스크린 삼각형 드로우: 3개의 정점으로 화면 전체 커버
+    Graphics.DeviceContext->Draw(3, 0);
+
+    // 4) 한 번만 그리도록 플래그 리셋
+    bRender = false;
 }
 
-void FBlurRenderPass::UpdateBlurConstant(float BlurStrength, float TexelX, float TexelY) const
-{
-    const FGraphicsDevice& Graphics = GEngineLoop.GraphicDevice;
-    FRenderResourceManager* renderResourceManager = GEngineLoop.Renderer.GetResourceManager();
-
-    FBlurConstants BlurConstants;
-    BlurConstants.BlurStrength = BlurStrength;
-    BlurConstants.TexelSizeX = TexelX;
-    BlurConstants.TexelSizeY = TexelY;
-    
-    renderResourceManager->UpdateConstantBuffer(BlurConstantBuffer, &BlurConstants);
-    Graphics.DeviceContext->PSSetConstantBuffers(0, 1, &BlurConstantBuffer);
-}
-
-void FBlurRenderPass::UpdateDOFConstant(std::shared_ptr<FViewportClient> InViewportClient) const
+void FDepthOfFieldRenderPass::UpdateDoFConstant(const std::shared_ptr<FViewportClient> InViewportClient) const
 {
     const FGraphicsDevice& Graphics = GEngineLoop.GraphicDevice;
     FRenderResourceManager* renderResourceManager = GEngineLoop.Renderer.GetResourceManager();
@@ -108,8 +84,6 @@ void FBlurRenderPass::UpdateDOFConstant(std::shared_ptr<FViewportClient> InViewp
     FDoFConstants DofConstant;
 
     // 테스트용 기본 값 설정
-    DofConstant.NearPlane = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient)->GetNearClip();
-    DofConstant.FarPlane = std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient)->GetFarClip();
     DofConstant.FocusDepth   = GEngineLoop.FocusDepth;   // 초점 맞출 거리 (world space depth)
     DofConstant.FocusRange   = GEngineLoop.FocusRange;    // 초점 허용 범위
     DofConstant.MaxCoc       = GEngineLoop.MaxCoc;      // 최대 Circle of Confusion 크기 (픽셀 단위)

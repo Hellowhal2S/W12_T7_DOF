@@ -454,7 +454,6 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\SkeletalMeshComponent.h" />
     <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\SkeletalMeshRenderPass.h" />
     <ClInclude Include="Engine\Source\Editor\PropertyEditor\PreviewControlEditorPanel.h" />
-    <ClInclude Include="Engine\Source\Editor\PropertyEditor\SkeletalPreviewPropertyEditorPanel.h" />
     <ClInclude Include="Engine\Source\Editor\UnrealEd\SkeletalPreviewUI.h" />
     <ClInclude Include="Engine\Source\Runtime\Core\Math\Point.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Actors\SkeletalMeshActor.h" />
@@ -528,6 +527,28 @@
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Particles\Collision\ParticleModuleCollisionBase.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Particles\Snow\ParticleModuleSnow.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\ParticleMeshEmitterInstance.h" />
+    <ClInclude Include="Engine\Source\Editor\UnrealEd\PhysicsPreviewUI.h" />
+    <ClInclude Include="Engine\Source\Editor\UnrealEd\ViewerPanel\PhysicsSkeletonPanel.h" />
+    <ClInclude Include="Engine\Source\Editor\UnrealEd\ViewerPanel\SkeletalViewerControlPanel.h" />
+    <ClInclude Include="Engine\Source\Editor\UnrealEd\ViewerPanel\SkeletonDetailPanel.h" />
+    <ClInclude Include="Engine\Source\Editor\UnrealEd\ViewerPanel\PhysicsToolBoxPanel.h" />
+    <ClInclude Include="Engine\Source\Editor\UnrealEd\ViewerPanel\SkeletonPanel.h" />
+    <ClInclude Include="Engine\Source\Runtime\Core\Physics\PhysX.h" />
+    <ClInclude Include="Engine\Source\Runtime\Core\Physics\PhysXCallback.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\AggregateGeom.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodyInstance.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodyInstanceCore.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodySetup.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodySetupCore.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BoxElem.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ConstraintInstance.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ConvexElem.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\PhysicsAsset.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ShapeElem.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\SphereElem.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\SphylElem.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\UserInterface\Drawer.h" />
+    <ClInclude Include="Engine\Source\Runtime\Renderer\RenderPass\DepthOfFieldRenderPass.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Source\ThirdParty\DirectXTK\Include\DDSTextureLoader.h" />
@@ -609,6 +630,8 @@
     <FxCompile Include="Shaders\SkeletalUberLitVertexShader.hlsl" />
     <FxCompile Include="Shaders\ParticleSpritePixelShader.hlsl" />
     <FxCompile Include="Shaders\ParticleSpriteVertexShader.hlsl" />
+    <FxCompile Include="Shaders\DOFVertexShader.hlsl" />
+    <FxCompile Include="Shaders\DOFPixelShader.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Week0v2.natvis" />
@@ -733,7 +756,6 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Components\PrimitiveComponents\MeshComponents\SkeletalMeshComponent.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\SkeletalMeshRenderPass.cpp" />
     <ClCompile Include="Engine\Source\Editor\PropertyEditor\PreviewControlEditorPanel.cpp" />
-    <ClCompile Include="Engine\Source\Editor\PropertyEditor\SkeletalPreviewPropertyEditorPanel.cpp" />
     <ClCompile Include="Engine\Source\Editor\UnrealEd\SkeletalPreviewUI.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Core\Math\Point.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Actors\SkeletalMeshActor.cpp" />
@@ -806,6 +828,23 @@
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Particles\Collision\ParticleModuleCollisionBase.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Particles\Snow\ParticleModuleSnow.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\ParticleMeshEmitterInstance.cpp" />
+    <ClCompile Include="Engine\Source\Editor\UnrealEd\PhysicsPreviewUI.cpp" />
+    <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\PhysicsSkeletonPanel.cpp" />
+    <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\SkeletalViewerControlPanel.cpp" />
+    <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\SkeletonDetailPanel.cpp" />
+    <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\PhysicsToolBoxPanel.cpp" />
+    <ClCompile Include="Engine\Source\Editor\UnrealEd\ViewerPanel\SkeletonPanel.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Core\Physics\PhysX.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Core\Physics\PhysXCallback.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\AggregateGeom.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodyInstance.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodyInstanceCore.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodySetup.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodySetupCore.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\PhysicsAsset.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ShapeElem.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\UserInterface\Drawer.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Renderer\RenderPass\DepthOfFieldRenderPass.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\ShaderHeaders\GConstantBuffers.hlsli" />
