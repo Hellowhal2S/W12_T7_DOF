@@ -122,6 +122,8 @@ private:
     TArray<RagdollBone*> RagdollBones;
     void CreateRagdollBones();
     void CreateRagdoll(const PxVec3& worldRoot);
+
+public:
     void CreateRagedollBodySetUp();
 
 private:

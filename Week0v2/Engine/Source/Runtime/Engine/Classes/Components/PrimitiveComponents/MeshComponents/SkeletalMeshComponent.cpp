@@ -154,7 +154,7 @@ void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* value)
     // CreateBoneComponents();
     // CreateRagdollBones();
     // CreateRagdoll(PxVec3(0, 0, 100));
-    CreateRagedollBodySetUp();
+    //CreateRagedollBodySetUp();
 }
 
 UAnimSingleNodeInstance* USkeletalMeshComponent::GetSingleNodeInstance() const
