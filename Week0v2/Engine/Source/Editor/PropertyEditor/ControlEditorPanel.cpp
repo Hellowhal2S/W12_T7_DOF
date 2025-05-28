@@ -656,7 +656,7 @@ void ControlEditorPanel::CreateFlagButton() const
         ImGui::OpenPopup("ShowControl");
     }
 
-    const char* Items[] = { "AABB", "Primitive", "BillBoard", "UUID", "Fog", "SkeletalMesh", "Particle" };
+    const char* Items[] = { "AABB", "Primitive", "BillBoard", "UUID", "Fog", "SkeletalMesh", "Particle", "DOF" };
     const uint64 ActiveViewportFlags = ActiveViewport->GetShowFlag();
 
     if (ImGui::BeginPopup("ShowControl"))
@@ -669,7 +669,8 @@ void ControlEditorPanel::CreateFlagButton() const
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_UUIDText)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_Fog)) != 0,
             (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_SkeletalMesh)) != 0,
-            (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_Particles)) != 0
+            (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_Particles)) != 0,
+            (ActiveViewportFlags & static_cast<uint64>(EEngineShowFlags::SF_DOF)) != 0
         };  // 각 항목의 체크 상태 저장
 
         for (int ItemIndex = 0; ItemIndex < IM_ARRAYSIZE(Items); ItemIndex++)
@@ -851,6 +852,8 @@ uint64 ControlEditorPanel::ConvertSelectionToFlags(const bool Selected[]) const
         Flags |= static_cast<uint64>(EEngineShowFlags::SF_SkeletalMesh);
     if (Selected[6])
         Flags |= static_cast<uint64>(EEngineShowFlags::SF_Particles);
+    if (Selected[7])
+        Flags |= static_cast<uint64>(EEngineShowFlags::SF_DOF);
     return Flags;
 }
 

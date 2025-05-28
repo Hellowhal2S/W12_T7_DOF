@@ -4,6 +4,7 @@
 
 #include "EditorEngine.h"
 #include "LaunchEngineLoop.h"
+#include "ShowFlags.h"
 #include "Viewport.h"
 #include "D3D11RHI/CBStructDefine.h"
 #include "D3D11RHI/GraphicDevice.h"
@@ -68,6 +69,16 @@ void FBlurRenderPass::Prepare(std::shared_ptr<FViewportClient> InViewportClient)
 
 void FBlurRenderPass::Execute(std::shared_ptr<FViewportClient> InViewportClient)
 {
+    if ( !(std::dynamic_pointer_cast<FEditorViewportClient>(InViewportClient)->GetShowFlag() & EEngineShowFlags::SF_DOF))
+    {
+        UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
+        EditorEngine->testBlurStrength =0.0f;
+    }
+    else
+    {
+        UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
+        EditorEngine->testBlurStrength =1.0f;
+    }
     FGraphicsDevice& Graphics = GEngineLoop.GraphicDevice;
 
     if (bRender)
