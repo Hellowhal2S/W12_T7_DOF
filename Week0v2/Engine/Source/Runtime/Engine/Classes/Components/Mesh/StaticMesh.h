@@ -19,6 +19,9 @@ public:
     OBJ::FStaticMeshRenderData* GetRenderData() const { return staticMeshRenderData; }
 
     void SetData(OBJ::FStaticMeshRenderData* renderData);
+    
+    void SetBodySetup(UBodySetup* InBodySetup);
+    UBodySetup* GetBodySetup() const { return BodySetup; }
 private:
     OBJ::FStaticMeshRenderData* staticMeshRenderData = nullptr;
     UBodySetup* BodySetup;

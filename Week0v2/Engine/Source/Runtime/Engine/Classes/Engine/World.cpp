@@ -10,6 +10,8 @@
 #include "Level.h"
 #include "Engine/FBXLoader.h"
 #include "Actors/ADodge.h"
+#include "Animation/Skeleton.h"
+#include "Components/PrimitiveComponents/MeshComponents/SkeletalMeshComponent.h"
 #include "Contents/GameManager.h"
 #include "Serialization/FWindowsBinHelper.h"
 
@@ -80,38 +82,38 @@ void UWorld::InitPhysicsScene()
     GroundPlane->setName("GroundPlane");
     gScene->addActor(*GroundPlane);
 
-    FGameObject FallingBox = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
-    if (auto* rigidDynamic = FallingBox.rigidBody->is<physx::PxRigidDynamic>())
-    {
-        rigidDynamic->setAngularDamping(0.5f);
-        rigidDynamic->setLinearDamping (0.5f);
-        rigidDynamic->setMass          (10.0f);
-    }
-    FallingBox.rigidBody->setName("FallingBox");
-    FallingBox.scene = gScene;
-    gObjects.push_back(FallingBox);
-        
-    FGameObject BigBox = CreateBox(PxVec3(0, 0, 1),
-                                   PxVec3(100, 100, 1),
-                                   FPhysX::EActorType::Static);
-    if (auto* rigidDynamic = BigBox.rigidBody->is<physx::PxRigidDynamic>())
-    {
-        rigidDynamic->setAngularDamping(0.5f);
-        rigidDynamic->setLinearDamping (0.5f);
-        rigidDynamic->setMass          (10.0f);
-    }
-    BigBox.rigidBody->setName("BigBox");
-    BigBox.scene = gScene;
-    gObjects.push_back(BigBox);
-    
-    FGameObject TriggerBox = CreateBox(
-                PxVec3(0, 0, 20),
-            PxVec3(5, 5, 1),
-                    FPhysX::EActorType::Static,
-                    PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE);
-    TriggerBox.rigidBody->setName("TriggerBox");
-    TriggerBox.scene = gScene;
-    gObjects.push_back(TriggerBox);
+    // FGameObject FallingBox = CreateBox(PxVec3(0, 0, 100), PxVec3(1, 1, 1));
+    // if (auto* rigidDynamic = FallingBox.rigidBody->is<physx::PxRigidDynamic>())
+    // {
+    //     rigidDynamic->setAngularDamping(0.5f);
+    //     rigidDynamic->setLinearDamping (0.5f);
+    //     rigidDynamic->setMass          (10.0f);
+    // }
+    // FallingBox.rigidBody->setName("FallingBox");
+    // FallingBox.scene = gScene;
+    // gObjects.push_back(FallingBox);
+    //     
+    // FGameObject BigBox = CreateBox(PxVec3(0, 0, 1),
+    //                                PxVec3(100, 100, 1),
+    //                                FPhysX::EActorType::Static);
+    // if (auto* rigidDynamic = BigBox.rigidBody->is<physx::PxRigidDynamic>())
+    // {
+    //     rigidDynamic->setAngularDamping(0.5f);
+    //     rigidDynamic->setLinearDamping (0.5f);
+    //     rigidDynamic->setMass          (10.0f);
+    // }
+    // BigBox.rigidBody->setName("BigBox");
+    // BigBox.scene = gScene;
+    // gObjects.push_back(BigBox);
+    //
+    // FGameObject TriggerBox = CreateBox(
+    //             PxVec3(0, 0, 20),
+    //         PxVec3(5, 5, 1),
+    //                 FPhysX::EActorType::Static,
+    //                 PxShapeFlag::eTRIGGER_SHAPE | PxShapeFlag::eSCENE_QUERY_SHAPE);
+    // TriggerBox.rigidBody->setName("TriggerBox");
+    // TriggerBox.scene = gScene;
+    // gObjects.push_back(TriggerBox);
 
     printf("Init Physics Scene\n");
 }
@@ -158,11 +160,51 @@ FGameObject UWorld::CreateBox(
     obj.UpdateFromPhysics();
     return obj;
 }
-
+    
 void UWorld::Simulate(float dt) {
     gScene->simulate(dt);
     gScene->fetchResults(true);
-    for (auto& obj : gObjects) obj.UpdateFromPhysics();
+    
+    // // 예시: 모든 동적(Dynamic) 및 정적(Static) 바디 가져오기
+    //PxU32 bufferSize = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
+    //std::vector<PxActor*> actorBuffer(bufferSize);
+    //gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actorBuffer.data(), bufferSize);
+    //for (PxU32 i = 0; i < bufferSize; ++i) {
+    //    PxActor* actor = actorBuffer[i];
+    //    if (!actor->userData) continue;
+    //
+    //    // actor를 사용 (예: userData로 엔진 오브젝트 찾기, pose 읽기 등)
+    //    PxTransform pose;
+    //    if (PxRigidDynamic* dyn = actor->is<PxRigidDynamic>()) {
+    //        pose = dyn->getGlobalPose();
+    //    } else if (PxRigidStatic* stat = actor->is<PxRigidStatic>()) {
+    //        pose = stat->getGlobalPose();
+    //    }
+    //    FVector newLocation = FromPxVec3(pose.p);
+    //    FQuat newRotation = FromPxQuat(pose.q);
+    //    
+    //    FBodyInstance* BodyInst = (FBodyInstance*)actor->userData;
+    //    
+    //    // StaticMeshComponent
+    //    if (UStaticMeshComponent* staticComp = Cast<UStaticMeshComponent>(BodyInst->OwnerComponent)) {
+    //        staticComp->SetWorldLocation(newLocation);
+    //        staticComp->SetWorldRotation(newRotation);
+    //    }
+    //    // SkeletalMeshComponent - 본 단위
+    //    else if (USkeletalMeshComponent* skelComp = Cast<USkeletalMeshComponent>(BodyInst->OwnerComponent)) {
+    //        int* Index = skelComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->BoneNameToIndexMap.Find(BodyInst->BoneName.ToString());
+    //        int ParentIndex = skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].ParentIndex;
+    //        if (ParentIndex != INDEX_NONE)
+    //        {
+    //            skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = FMatrix::CreateTranslationMatrix(newLocation) * FMatrix::CreateRotationMatrix(newRotation.Rotator().Roll, newRotation.Rotator().Pitch, newRotation.Rotator().Yaw) * skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].GlobalTransform.Inverse();
+    //        }
+    //        else
+    //        {
+    //            skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = FMatrix::CreateTranslationMatrix(newLocation) * FMatrix::CreateRotationMatrix(newRotation.Rotator().Roll, newRotation.Rotator().Pitch, newRotation.Rotator().Yaw);
+    //        }
+    //        skelComp->GetSkeletalMesh()->UpdateBoneHierarchy();
+    //    }
+    //}
 }
 
 void UWorld::LoadLevel(const FString& LevelName)
@@ -370,6 +412,14 @@ bool UWorld::DestroyActor(AActor* ThisActor)
     for (UActorComponent* Component : Components)
     {
         Component->DestroyComponent();
+        if (Component->IsA<USkeletalMeshComponent>())
+        {
+            Cast<USkeletalMeshComponent>(Component)->ReleaseBodies();
+        }
+        else if (Component->IsA<UStaticMeshComponent>())
+        {
+            Cast<UStaticMeshComponent>(Component)->ReleaseBody();
+        }
     }
 
     // World에서 제거

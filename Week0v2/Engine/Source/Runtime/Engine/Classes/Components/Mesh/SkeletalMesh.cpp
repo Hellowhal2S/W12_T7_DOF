@@ -244,6 +244,7 @@ void USkeletalMesh::DuplicateSubObjects(const UObject* Source, UObject* InOuter)
 {
     USkeletalMesh* Mesh = Cast<USkeletalMesh>(Source);
     SkeletalMeshRenderData = FSkeletalMeshRenderData(Mesh->SkeletalMeshRenderData);
+    PhysicsAsset = Mesh->PhysicsAsset;
 }
 
 void USkeletalMesh::UpdateSkinnedVertices()

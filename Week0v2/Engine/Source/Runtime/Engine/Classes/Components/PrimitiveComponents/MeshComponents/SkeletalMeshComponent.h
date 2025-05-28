@@ -2,11 +2,13 @@
 #include "MeshComponent.h"
 #include "Components/Mesh/SkeletalMesh.h"
 
+class FTransform;
 class UAnimInstance;
 class UStaticMeshComponent;
 class UAnimationAsset;
 class UAnimSingleNodeInstance;
 class UAnimSequence;
+struct RagdollBone;
 
 enum class EAnimationMode : uint8
 {
@@ -49,6 +51,10 @@ public:
     UAnimSingleNodeInstance* GetSingleNodeInstance() const;
     void CreateBoneComponents();
     void UpdateBoneHierarchy();
+    
+    //BodyInstance
+    void InstantiatePhysicsAssetBodies_Internal();
+    void ReleaseBodies();
 
     UPROPERTY(int, SelectedSubMeshIndex);
 
@@ -111,6 +117,15 @@ private:
 
     /** Array of FConstraintInstance structs, storing per-instance state about each constraint. */
     TArray<struct FConstraintInstance*> Constraints;
+
+private:
+    TArray<RagdollBone*> RagdollBones;
+    void CreateRagdollBones();
+    void CreateRagdoll(const PxVec3& worldRoot);
+
+public:
+    void CreateRagedollBodySetUp();
+
 private:
     TArray<UStaticMeshComponent*> BoneComponents;
     bool bCPUSkinned = true;
