@@ -88,8 +88,8 @@ void USkeletalMesh::UpdateBoneHierarchy()
     for (int32 RootIndex : Skeleton->GetRefSkeletal()->RootBoneIndices)
     {
         // 루트 뼈는 로컬 트랜스폼이 곧 글로벌 트랜스폼이 됨
-        SkeletalMeshRenderData.Bones[RootIndex].GlobalTransform =
-            SkeletalMeshRenderData.Bones[RootIndex].LocalTransform;
+        // SkeletalMeshRenderData.Bones[RootIndex].GlobalTransform =
+        //     SkeletalMeshRenderData.Bones[RootIndex].LocalTransform;
 
         SkeletalMeshRenderData.Bones[RootIndex].SkinningMatrix =
             SkeletalMeshRenderData.Bones[RootIndex].InverseBindPoseMatrix * SkeletalMeshRenderData.Bones[RootIndex].GlobalTransform;
@@ -108,8 +108,8 @@ void USkeletalMesh::UpdateChildBones(int ParentIndex)
     for (int32 ChildIndex : ParentNode.ChildIndices)
     {
         // 자식의 글로벌 트랜스폼은 부모의 글로벌 트랜스폼과 자식의 로컬 트랜스폼을 결합한 것
-        SkeletalMeshRenderData.Bones[ChildIndex].GlobalTransform
-        = SkeletalMeshRenderData.Bones[ChildIndex].LocalTransform * SkeletalMeshRenderData.Bones[ParentIndex].GlobalTransform;
+        // SkeletalMeshRenderData.Bones[ChildIndex].GlobalTransform
+        // = SkeletalMeshRenderData.Bones[ChildIndex].LocalTransform * SkeletalMeshRenderData.Bones[ParentIndex].GlobalTransform;
 
         SkeletalMeshRenderData.Bones[ChildIndex].SkinningMatrix
         = SkeletalMeshRenderData.Bones[ChildIndex].InverseBindPoseMatrix * SkeletalMeshRenderData.Bones[ChildIndex].GlobalTransform;
