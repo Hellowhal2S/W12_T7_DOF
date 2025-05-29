@@ -132,6 +132,7 @@ void FSkeletonDetailPanel::Render(UBodySetup* BodySetup, TArray<UConstraintSetup
                         (Constraint->JointElem.ChildBoneName == BodySetup->BoneName ||
                          Constraint->JointElem.ParentBoneName == BodySetup->BoneName))
                     {
+                        ImGui::PushID(Constraint); // 혹은 ImGui::PushID(i);
                         ImGui::Text("Constraint: %s  %s <-> %s",
                             *Constraint->JointName.ToString(),
                             *Constraint->JointElem.ParentBoneName.ToString(),
@@ -170,6 +171,7 @@ void FSkeletonDetailPanel::Render(UBodySetup* BodySetup, TArray<UConstraintSetup
                             if (ImGui::Combo(axisNames[axis], &motion, motionNames, 3))
                                 Constraint->JointElem.AxisMotions[axis] = static_cast<EJointMotion>(motion);
                         }
+                        ImGui::PopID();
                     }
                 }
             }

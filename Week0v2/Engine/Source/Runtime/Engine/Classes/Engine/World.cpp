@@ -169,7 +169,6 @@ void UWorld::Simulate(float dt) {
     PxU32 bufferSize = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
     std::vector<PxActor*> actorBuffer(bufferSize);
     gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actorBuffer.data(), bufferSize);
-    bool isdirty = false;
     for (PxU32 i = 0; i < bufferSize; ++i) {
         PxActor* actor = actorBuffer[i];
         if (!actor->userData) continue;
@@ -196,13 +195,10 @@ void UWorld::Simulate(float dt) {
             FMatrix RotationMatrix = FromPxQuat(pose.q).GetSafeNormal().ToMatrix();
             FMatrix TranslationMatrix = FMatrix::CreateTranslationMatrix(FromPxVec3(pose.p));
             FMatrix RefGMat;
+            
             if (ParentIndex != INDEX_NONE)
             {
                 RefGMat = skelComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->RawBones[ParentIndex].GlobalTransform;
-            }
-            else if (!isdirty)
-            {
-                RefGMat = skelComp->GetSkeletalMesh()->GetSkeleton()->GetRefSkeletal()->RawBones[*Index].GlobalTransform;
             }
             FMatrix GlobalTransform = RefGMat * RotationMatrix;
             GlobalTransform.M[3][0] = TranslationMatrix.M[3][0];
@@ -215,12 +211,11 @@ void UWorld::Simulate(float dt) {
                 {
                     skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].LocalTransform = GlobalTransform * skelComp->GetSkeletalMesh()->GetRenderData().Bones[PaParentIndex].GlobalTransform.Inverse();
                 }
+                else
+                {
+                    skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].LocalTransform = GlobalTransform;
+                }
             }
-            else if (!isdirty)
-            {
-                skelComp->GetSkeletalMesh()->GetRenderData().Bones[*Index].LocalTransform = GlobalTransform;
-            }
-            skelComp->GetSkeletalMesh()->UpdateBoneHierarchy();
         }
     }
 }
