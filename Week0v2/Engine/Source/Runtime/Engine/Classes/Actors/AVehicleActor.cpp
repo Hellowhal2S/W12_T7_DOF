@@ -114,7 +114,7 @@ snippetvehicle::VehicleDesc AVehicleActor::CreateDesc()
         }
 
         // 바퀴 위치(Local → World 오프셋)
-        FVector RelLoc = Children[i]->GetWorldLocation();
+        FVector RelLoc = Children[i]->GetRelativeLocation();
         VehicleDesc.wheelOffsets[i] = PxVec3(
             CmToM(RelLoc.X),
             CmToM(RelLoc.Y),
@@ -194,7 +194,7 @@ void AVehicleActor::CreateVehicle()
     );
 
     // (d) 차량 시뮬레이터 객체 생성
-    PxVehicleDrive4W* vehicle4W = snippetvehicle::createVehicle4W(Desc, physics, cooking);
+    PxVehicleDrive4W* vehicle4W = createVehicle4W(Desc, physics, cooking);
     PxVehicleWheels& wheels = *vehicle4W;
     PxVehicleWheelsSimData& wheelsSimData = wheels.mWheelsSimData;
     for (PxU32 i = 0; i < wheelsSimData.getNbWheels(); ++i)
@@ -223,6 +223,7 @@ void AVehicleActor::CreateVehicle()
 
     // (f) PhysX 씬에 추가
     VehicleManager->GetPxScene()->addActor(*chassisActor);
+    VehicleManager->RegisterPlayerVehicle(chassisActor, vehicle4W, Desc.numWheels);
 
     // (g) 월드 변환 반영
     FVector WorldLoc = StaticMeshComponent->GetWorldLocation();
@@ -231,12 +232,14 @@ void AVehicleActor::CreateVehicle()
     chassisActor->setGlobalPose(PxPose, true);
 
     // (h) VehicleManager 내부 인스턴스에 등록
+    auto VehicleInstance = VehicleManager->GetPlayerVehicle();
     VehicleInstance = new struct VehicleInstance();
     VehicleInstance->chassisActor = chassisActor;
     VehicleInstance->vehicle      = vehicle4W;
     PxDefaultAllocator Allocator;
     VehicleInstance->setupWheelQueryResults(Desc.numWheels, Allocator);
 
+    VehicleManager->RegisterPlayerVehicle(chassisActor, vehicle4W, Desc.numWheels);
     VehicleManager->AddVehicleActor(this);
 }
 
@@ -271,24 +274,4 @@ void AVehicleActor::OnHandBrakePressed()
 void AVehicleActor::OnHandBrakeReleased()
 {
     bHandBrake = false;
-}
-
-void AVehicleActor::Tick(float DeltaTime)
-{
-    Super::Tick(DeltaTime);
-
-    if (!VehicleInstance || !VehicleInstance->vehicle) return;
-
-    VehicleManager->UpdatePlayerVehicleInput(Throttle, Brake, Steering, bHandBrake);
-
-    PxTransform chassisPose = VehicleInstance->chassisActor->getGlobalPose();
-    SetActorLocation(P2UVector(chassisPose.p));
-    SetActorRotation(FRotator(P2UQuat  (chassisPose.q)));
-    
-    // for (int32 i = 0; i < TireMeshes.Num(); ++i)
-    // {
-    //     const PxWheelQueryResult& WQ = VehicleInstance->wheelQueryResults.wheelQueryResults[i];
-    //     TireMeshes[i]->SetRelativeLocation(   P2UVector(WQ.localPose.p)          );
-    //     TireMeshes[i]->SetRelativeRotation(   P2UQuat  (WQ.localPose.q).Rotator() );
-    // }
 }

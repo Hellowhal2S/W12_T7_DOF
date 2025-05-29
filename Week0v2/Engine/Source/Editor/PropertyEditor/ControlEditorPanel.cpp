@@ -557,7 +557,7 @@ void ControlEditorPanel::CreateModifyButton(const ImVec2 ButtonSize, ImFont* Ico
                         UStaticMeshComponent* BodyMeshComp = VehicleActor->GetStaticMeshComponent();
                         FManagerOBJ::CreateStaticMesh("Assets/Chrysler_Saratoga_1960/New/Body.obj");
                         BodyMeshComp->SetStaticMesh(FManagerOBJ::GetStaticMesh(L"Body.obj"));
-                        BodyMeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 40.0f));
+                        BodyMeshComp->SetRelativeLocation(FVector(0.0f, 0.0f, 100.0f));
                         BodyMeshComp->SetFName(TEXT("Body"));
                         for (int i = 0; i < 4; i++)
                             VehicleActor->AddComponent<UStaticMeshComponent>(EComponentOrigin::Editor);

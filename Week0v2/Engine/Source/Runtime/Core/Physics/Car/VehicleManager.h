@@ -1,27 +1,34 @@
 #pragma once
 #include "Physics/PhysX.h"
 #include <vehicle/PxVehicleDrive4W.h>
-#include <vehicle/PxVehicleUtil.h>
+
+namespace snippetvehicle
+{
+    class VehicleSceneQueryData;
+    class VehicleTireFriction;
+}
 
 class AVehicleActor;
-// SnippetVehicleSceneQuery.h 와 유사한 기능을 할 구조체/클래스
-// 여기서는 Snippet의 VehicleSceneQueryData를 직접 사용하지 않고, 필요한 멤버만 가져온다고 가정
+
 struct VehicleSuspensionRaycastData
 {
-    PxRaycastQueryResult* sqResults = nullptr;
-    PxRaycastHit* sqHitBuffer = nullptr;
-    PxU32 nbSqResults = 0;
+    PxRaycastQueryResult* sqResults;
+    PxRaycastHit*         sqHitBuffer;
+    PxU32                 nbSqResults;
 
+    // 올바른 크기로 allocate/free
     void allocate(PxU32 maxWheels, PxDefaultAllocator& allocator) {
         nbSqResults = maxWheels;
-        sqResults = (PxRaycastQueryResult*)allocator.allocate(sizeof(PxRaycastQueryResult)*nbSqResults, "RaycastResults", __FILE__, __LINE__);
-        sqHitBuffer = (PxRaycastHit*)allocator.allocate(sizeof(PxRaycastHit)*nbSqResults, "RaycastHits", __FILE__, __LINE__);
+        sqResults   = (PxRaycastQueryResult*)allocator.allocate(
+                         sizeof(PxRaycastQueryResult)*nbSqResults, 
+                         "RaycastResults", __FILE__, __LINE__);
+        sqHitBuffer = (PxRaycastHit*)allocator.allocate(
+                         sizeof(PxRaycastHit)*nbSqResults, 
+                         "RaycastHits", __FILE__, __LINE__);
     }
     void free(PxDefaultAllocator& allocator) {
         if (sqHitBuffer) allocator.deallocate(sqHitBuffer);
-        sqHitBuffer = nullptr;
-        if (sqResults) allocator.deallocate(sqResults);
-        sqResults = nullptr;
+        if (sqResults)   allocator.deallocate(sqResults);
         nbSqResults = 0;
     }
 };
@@ -57,11 +64,15 @@ public:
     ~VehicleManager();
 
     int GetVehicleActorSize() { return VehicleActors.Num(); }
-    void AddVehicleActor(AVehicleActor* Vehicle) { VehicleActors.Add(Vehicle); }
-    
+    void AddVehicleActor(AVehicleActor* Vehicle);
     PxScene* GetPxScene() { return PxScene; }
     VehicleInstance* GetPlayerVehicle() { return PlayerVehicleInstance.vehicle ? &PlayerVehicleInstance : nullptr; }
 
+    /** AVehicleActor에서 만든 chassisActor/vehicle을 여기로 등록합니다. */
+    void RegisterPlayerVehicle(PxRigidDynamic* ChassisActor,
+                               PxVehicleDrive4W* Vehicle,
+                               PxU32             NumWheels);
+    
     void UpdateAllVehicles(float dt);
     void UpdatePlayerVehicleInput(float accel, float brake, float steer, bool handbrake);
     
@@ -79,9 +90,12 @@ private:
     VehicleInstance PlayerVehicleInstance;
 
     // 서스펜션 레이캐스트 관련
-    PxBatchQuery* BatchQuery = nullptr;
-    VehicleSuspensionRaycastData SuspensionRaycastData;
-    static const PxU32 NumWheelsPerVehicle = 4;
+    static constexpr PxU32 MaxVehicles         = 8;  // 최대 차량 대수
+    static constexpr PxU32 NumWheelsPerVehicle = 4;  // 차량당 휠 개수
+    // PxVehicleSceneQueryData: nbVehicles × nbWheelsPerVehicle × 1 히트
+    snippetvehicle::VehicleSceneQueryData*     SQData       = nullptr;
+    PxBatchQuery*                              SQBatchQuery = nullptr;
+    VehicleSuspensionRaycastData               SQResults;
 
     // 입력 스무딩 및 조향 테이블
     PxFixedSizeLookupTable<8> SteerVsForwardSpeedTable;

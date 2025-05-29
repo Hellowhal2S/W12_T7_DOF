@@ -19,7 +19,6 @@ public:
     AVehicleActor(const AVehicleActor& Other);
 
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-    virtual void Tick(float DeltaTime) override;
 
     snippetvehicle::VehicleDesc CreateDesc();
     void CreateVehicle();
@@ -34,7 +33,6 @@ private:
     
     UStaticMeshComponent* StaticMeshComponent = nullptr;
     VehicleManager*      VehicleManager = nullptr;
-    VehicleInstance*     VehicleInstance = nullptr;
     TArray<UStaticMeshComponent*> TireMeshes;
     
     float Throttle = 0.f, Brake = 0.f, Steering = 0.f;

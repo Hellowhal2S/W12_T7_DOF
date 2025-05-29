@@ -75,25 +75,25 @@ void UWorld::InitPhysicsScene()
 
     PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();
         
-    // PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 0, 1, 0), *gMaterial);
-    // PxShape* planeShape;
-    // GroundPlane->getShapes(&planeShape, 1);
-    // planeShape->setSimulationFilterData(FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::VehicleBody | FPhysX::ECollisionGroup::VehicleWheel));
-    // PxFilterData QryFilterData;
-    // QryFilterData.word3 = 0; // FPhysX::InitVehicleSDK에서 설정한 기본 지면 타입 ID (0)
-    // planeShape->setQueryFilterData(QryFilterData);
-    // GroundPlane->setName("GroundPlane");
-    // gScene->addActor(*GroundPlane);
+    PxRigidStatic* GroundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 0, 1, 0.5f), *gMaterial);
+    PxShape* planeShape;
+    GroundPlane->getShapes(&planeShape, 1);
+    planeShape->setSimulationFilterData(FPhysX::MakeFilterData(FPhysX::ECollisionGroup::Environment, FPhysX::ECollisionGroup::VehicleBody | FPhysX::ECollisionGroup::VehicleWheel));
+    PxFilterData QryFilterData;
+    QryFilterData.word3 = 0; // FPhysX::InitVehicleSDK에서 설정한 기본 지면 타입 ID (0)
+    planeShape->setQueryFilterData(QryFilterData);
+    GroundPlane->setName("GroundPlane");
+    gScene->addActor(*GroundPlane);
 
-    PxRigidStatic* plane = snippetvehicle::createDrivablePlane(
-    FPhysX::MakeFilterData(
-            FPhysX::ECollisionGroup::Environment,
-            FPhysX::ECollisionGroup::VehicleBody | FPhysX::ECollisionGroup::VehicleWheel
-        ),
-        gMaterial,
-        gPhysics
-    );
-    gScene->addActor(*plane);
+    // PxRigidStatic* plane = snippetvehicle::createDrivablePlane(
+    // FPhysX::MakeFilterData(
+    //         FPhysX::ECollisionGroup::Environment,
+    //         FPhysX::ECollisionGroup::VehicleBody | FPhysX::ECollisionGroup::VehicleWheel
+    //     ),
+    //     gMaterial,
+    //     gPhysics
+    // );
+    // gScene->addActor(*plane);
     
     VehicleManager = new class VehicleManager(gScene);
 
@@ -185,6 +185,17 @@ void UWorld::Simulate(float dt)
 
     if (VehicleManager && VehicleManager->GetVehicleActorSize() > 0)
     {
+        static float t = 0;  
+        t += dt;
+
+        // 예: 0~1 사이로 왔다갔다하는 accel
+        float accel = 0.5f * (FMath::Sin(t * 0.8f) + 1.0f);
+        // 예: -0.5~+0.5 사이로 흔들리는 steer
+        float steer = 0.5f * FMath::Sin(t * 1.3f);
+        bool  handbrake = false;
+        float brake = 0.0f;
+
+        VehicleManager->UpdatePlayerVehicleInput(accel, brake, steer, handbrake);
         VehicleManager->UpdateAllVehicles(dt);
     }
 }
