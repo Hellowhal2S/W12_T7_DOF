@@ -1,8 +1,9 @@
 ﻿#include "SkeletonDetailPanel.h"
 #include "ImGui/imgui.h"
 #include "PhysicsEngine/BodySetup.h"
+#include "PhysicsEngine/ConstraintSetup.h"
 
-void FSkeletonDetailPanel::Render(UBodySetup* BodySetup)
+void FSkeletonDetailPanel::Render(UBodySetup* BodySetup, TArray<UConstraintSetup*>& ConstraintSetups)
 {
 
     ImVec2 WinSize = ImVec2(Width, Height);
@@ -116,6 +117,62 @@ void FSkeletonDetailPanel::Render(UBodySetup* BodySetup)
                 }
             }
             if (ImGui::Button("Add Convex")) { Agg.ConvexElems.Add(FKConvexElem()); }
+            ImGui::TreePop();
+        }
+
+        // --- Constraint Elements ---
+        if (ImGui::TreeNodeEx("Constraints", ImGuiTreeNodeFlags_Framed))
+        {
+            if (ConstraintSetups.Num() > 0)
+            {
+                for (UConstraintSetup* Constraint : ConstraintSetups)
+                {
+                    // BodySetup->BoneName과 연결된 Constraint만 출력/수정
+                    if (Constraint &&
+                        (Constraint->JointElem.ChildBoneName == BodySetup->BoneName ||
+                         Constraint->JointElem.ParentBoneName == BodySetup->BoneName))
+                    {
+                        ImGui::Text("Constraint: %s  %s <-> %s",
+                            *Constraint->JointName.ToString(),
+                            *Constraint->JointElem.ParentBoneName.ToString(),
+                            *Constraint->JointElem.ChildBoneName.ToString());
+
+                        // Twist 제한(각도, degree 단위로 표시/입력)
+                        float twistMin = FMath::RadiansToDegrees(Constraint->JointElem.TwistLimitMin);
+                        float twistMax = FMath::RadiansToDegrees(Constraint->JointElem.TwistLimitMax);
+                        if (ImGui::InputFloat("Twist Min (deg)", &twistMin))
+                            Constraint->JointElem.TwistLimitMin = FMath::DegreesToRadians(twistMin);
+                        if (ImGui::InputFloat("Twist Max (deg)", &twistMax))
+                            Constraint->JointElem.TwistLimitMax = FMath::DegreesToRadians(twistMax);
+
+                        // Swing 제한
+                        float swingMin1 = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMin1);
+                        float swingMax1 = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMax1);
+                        if (ImGui::InputFloat("Swing Min1 (deg)", &swingMin1))
+                            Constraint->JointElem.SwingLimitMin1 = FMath::DegreesToRadians(swingMin1);
+                        if (ImGui::InputFloat("Swing Max1 (deg)", &swingMax1))
+                            Constraint->JointElem.SwingLimitMax1 = FMath::DegreesToRadians(swingMax1);
+
+                        // Swing 제한
+                        float swingMin2 = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMin2);
+                        float swingMax2 = FMath::RadiansToDegrees(Constraint->JointElem.SwingLimitMax2);
+                        if (ImGui::InputFloat("Swing Min2 (deg)", &swingMin2))
+                            Constraint->JointElem.SwingLimitMin2 = FMath::DegreesToRadians(swingMin2);
+                        if (ImGui::InputFloat("Swing Max2 (deg)", &swingMax2))
+                            Constraint->JointElem.SwingLimitMax2 = FMath::DegreesToRadians(swingMax2);
+
+                        // 축별 제한(ComboBox)
+                        static const char* axisNames[] = { "X", "Y", "Z", "Twist", "Swing1", "Swing2" };
+                        static const char* motionNames[] = { "Locked", "Limited", "Free" };
+                        for (int axis = 0; axis < 6; ++axis)
+                        {
+                            int motion = static_cast<int>(Constraint->JointElem.AxisMotions[axis]);
+                            if (ImGui::Combo(axisNames[axis], &motion, motionNames, 3))
+                                Constraint->JointElem.AxisMotions[axis] = static_cast<EJointMotion>(motion);
+                        }
+                    }
+                }
+            }
             ImGui::TreePop();
         }
     }

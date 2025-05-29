@@ -2,7 +2,6 @@
 #include <PxRigidDynamic.h>
 #include <PxShape.h>
 
-#include "BodyInstanceCore.h"
 #include "Container/Array.h"
 #include "UObject/NameTypes.h"
 
@@ -10,7 +9,7 @@ enum class EBodyType { Dynamic, Static };
 using namespace physx;
 class UPrimitiveComponent;
 
-struct FBodyInstance : public FBodyInstanceCore
+struct FBodyInstance
 {
     PxRigidActor* RigidActorHandle = nullptr;
     PxRigidDynamic* RigidDynamicHandle = nullptr;

@@ -20,7 +20,7 @@ public:
 
     void AddAABB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
     void AddOBB(const FBoundingBox& localAABB, const FVector& center, const FMatrix& modelMatrix);
-    void AddCone(const FVector& start, float radius, const FVector& end, int segments, const FVector4& color);
+    void AddCone(const FVector& start, float radius1, float radius2, const FVector& end, int segments, const FVector4& color);
     void AddSphere(const FVector& center, float radius, const FVector4& color);
     void AddLine(const FVector& StartPos, const FVector& Direction, const float Length, const FVector4& Color);
     void AddCapsule(const FVector& Center, const FVector& UpVector, float HalfHeight, float Radius, const FVector4& Color);

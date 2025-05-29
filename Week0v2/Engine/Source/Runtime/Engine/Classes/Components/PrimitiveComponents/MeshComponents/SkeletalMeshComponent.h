@@ -54,6 +54,7 @@ public:
     
     //BodyInstance
     void InstantiatePhysicsAssetBodies_Internal();
+    void InstantiatePhysicsAssetConstraints_Internal();
     void ReleaseBodies();
 
     UPROPERTY(int, SelectedSubMeshIndex);
@@ -125,6 +126,7 @@ private:
 
 public:
     void CreateRagedollBodySetUp();
+    void CreateRagdollConstrinatSetup();
 
 private:
     TArray<UStaticMeshComponent*> BoneComponents;

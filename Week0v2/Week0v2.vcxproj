@@ -286,9 +286,7 @@ xcopy /y /d "$(ProjectDir)Engine\Source\ThirdParty\PhysX\lib\x64\$(Configuration
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\Particles\Velocity\ParticleModuleVelocity.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\AggregateGeom.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodyInstance.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodyInstanceCore.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodySetup.cpp" />
-    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodySetupCore.cpp" />
+    <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ConstraintInstance.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\PhysicsAsset.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ShapeElem.cpp" />
     <ClCompile Include="Engine\Source\Runtime\Engine\Materials\MaterialInterface.cpp" />
@@ -583,12 +581,14 @@ xcopy /y /d "$(ProjectDir)Engine\Source\ThirdParty\PhysX\lib\x64\$(Configuration
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\Particles\Velocity\ParticleModuleVelocity.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\AggregateGeom.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodyInstance.h" />
-    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodyInstanceCore.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodySetup.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BodySetupCore.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\BoxElem.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ConstraintInstance.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ConstraintSetup.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ConstraintSetupCore.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ConvexElem.h" />
+    <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\JointElem.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\PhysicsAsset.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\ShapeElem.h" />
     <ClInclude Include="Engine\Source\Runtime\Engine\Classes\PhysicsEngine\SphereElem.h" />
