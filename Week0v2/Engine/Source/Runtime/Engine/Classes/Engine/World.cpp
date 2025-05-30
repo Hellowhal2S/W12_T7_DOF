@@ -216,6 +216,7 @@ void UWorld::Simulate(float dt) {
                     skelComp->GetSkeletalMesh()->GetRenderData().Bones[ParentIndex].LocalTransform = GlobalTransform;
                 }
             }
+            skelComp->GetSkeletalMesh()->UpdateBoneHierarchy();
         }
     }
 }
